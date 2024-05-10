@@ -1,0 +1,17 @@
+**/.DS_Store
+*.cmp
+*.out
+*.tst
+*.txt
+*.hack
+*.ipynb
+**/__pycache__
+*.vm
+*.asm
+!04/fill/*.asm
+!04/mult/*.asm
+09/
+10/
+11/
+12/
+13/
