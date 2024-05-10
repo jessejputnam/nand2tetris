@@ -8,6 +8,7 @@
 **/__pycache__
 *.vm
 *.asm
+*.html
 !04/fill/*.asm
 !04/mult/*.asm
 09/
