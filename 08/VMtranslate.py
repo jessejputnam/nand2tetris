@@ -2,10 +2,13 @@ import sys
 
 from CodeWriter import (
     write_arithmetic,
+    write_call,
+    write_function,
     write_goto,
     write_if_goto,
     write_label,
     write_push_pop,
+    write_return,
 )
 from Lib import check_args, get_program_and_files, end_program, clean_line
 
@@ -20,6 +23,7 @@ if __name__ == "__main__":
 
         for file in files:
             with open(file) as f:
+                file_name = file.split("/")[-1][:-3]
                 for line in f:
                     line = clean_line(line)
                     if not line:
@@ -43,6 +47,17 @@ if __name__ == "__main__":
 
                     elif instr[0] == "goto":
                         output += write_goto(instr[1])
+
+                    elif instr[0] == "function":
+                        output += write_function(instr[1], int(instr[2], count))
+
+                    elif instr[0] == "call":
+                        output += write_call(
+                            instr[1], int(instr[2]), f"{file_name}$ret.{count}"
+                        )
+
+                    elif instr[0] == "return":
+                        output += write_return()
 
                     count += 1
 

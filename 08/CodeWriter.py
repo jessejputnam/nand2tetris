@@ -92,6 +92,7 @@ def write_call(function_name, num_args, caller_ret):
     output += write_goto(function_name)
     # (returnAddress) --- declares a label for the return address ex. Foo$ret.1
     output += write_label(caller_ret)
+    return output
 
 
 def write_return():
@@ -114,3 +115,4 @@ def write_return():
     output += f"@4\nD=A\n@{L0}\nA=M-D\nD=M\n@LCL\nM=D\n"
     # goto retAddr
     output += f"@{L1}\nA=M\n0;JMP\n"
+    return output
