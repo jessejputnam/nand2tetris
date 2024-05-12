@@ -14,9 +14,9 @@ def get_boolean_asm(cmd):
     op = 'D&M' if cmd == 'and' else 'D|M'
     return f'{pop_stack()}A=A-1\nM={op}\n' 
 
-def get_compare_asm(cmd, file_name, count):
+def get_compare_asm(cmd, count):
     op = cmd.upper()
-    return f'{pop_stack()}A=A-1\nD=M-D\n@IS.{file_name}.{op}{count}\nD;J{op}\n@SP\nA=M-1\nM={f}\n@END.{file_name}{count}\n0;JMP\n(IS.{file_name}.{op}{count})\n@SP\nA=M-1\nM={t}\n(END.{file_name}{count})\n'
+    return f'{pop_stack()}A=A-1\nD=M-D\n@IS.{op}{count}\nD;J{op}\n@SP\nA=M-1\nM={f}\n@END.{count}\n0;JMP\n(IS.{op}{count})\n@SP\nA=M-1\nM={t}\n(END.{count})\n'
 
 def get_unary_asm(cmd):
     op = '!M' if cmd == 'not' else '-M'

@@ -20,8 +20,6 @@ if __name__ == "__main__":
 
         for file in files:
             with open(file) as f:
-                file_name = file.split("/")[-1][:-3]
-
                 for line in f:
                     line = clean_line(line)
                     if not line:
@@ -32,19 +30,19 @@ if __name__ == "__main__":
                     instr = line.split(" ")
 
                     if len(instr) == 1:
-                        output += write_arithmetic(instr[0], file_name, count)
+                        output += write_arithmetic(instr[0], count)
 
                     elif instr[0] in ["push", "pop"]:
-                        output += write_push_pop(instr, file_name)
+                        output += write_push_pop(instr)
 
                     elif instr[0] == "label":
-                        output += write_label(instr[1], file_name)
+                        output += write_label(instr[1])
 
                     elif instr[0] == "if-goto":
-                        output += write_if_goto(instr[1], file_name)
+                        output += write_if_goto(instr[1])
 
                     elif instr[0] == "goto":
-                        output += write_goto(instr[1], file_name)
+                        output += write_goto(instr[1])
 
                     count += 1
 
