@@ -49,7 +49,7 @@ if __name__ == "__main__":
                         output += write_goto(instr[1])
 
                     elif instr[0] == "function":
-                        output += write_function(instr[1], int(instr[2], count))
+                        output += write_function(instr[1], int(instr[2]), count)
 
                     elif instr[0] == "call":
                         output += write_call(
