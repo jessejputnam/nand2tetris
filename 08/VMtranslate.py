@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
                     count += 1
 
-            output += end_program()
+            # output += end_program()
 
             # Write to file
             with open(f"{program_name}.asm", "w") as wf:
