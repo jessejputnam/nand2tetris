@@ -19,7 +19,6 @@ if __name__ == "__main__":
     try:
         check_args(sys.argv)
         program_name, files = get_program_and_files(sys.argv[1])
-        print(f"check {files}")
 
         for file in files:
             with open(file) as f:
@@ -34,10 +33,13 @@ if __name__ == "__main__":
                     instr = line.split(" ")
 
                     if len(instr) == 1:
-                        output += write_arithmetic(instr[0], count)
+                        if instr[0] == "return":
+                            output += write_return()
+                        else:
+                            output += write_arithmetic(instr[0], count)
 
                     elif instr[0] in ["push", "pop"]:
-                        output += write_push_pop(instr)
+                        output += write_push_pop(instr, file_name)
 
                     elif instr[0] == "label":
                         output += write_label(instr[1])
@@ -55,9 +57,6 @@ if __name__ == "__main__":
                         output += write_call(
                             instr[1], int(instr[2]), f"{file_name}$ret.{count}"
                         )
-
-                    elif instr[0] == "return":
-                        output += write_return()
 
                     count += 1
 
@@ -77,4 +76,4 @@ if __name__ == "__main__":
         print("An I/O error occurred while reading the file.")
 
     except Exception as e:
-        print("An unexpected error occurred:", e)
+        print("An unexpected error occurred: vm instruction", count, " || ", e)

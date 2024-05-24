@@ -26,7 +26,8 @@ def get_program_and_files(path):
 
         files = []
         for file in l:
-            files.insert(0, file) if file == "Sys.vm" else files.append(file)
+            is_sys = file.split('/')[-1] == 'Sys.vm'
+            files.insert(0, file) if is_sys else files.append(file)
 
     return [program_name, files]
 

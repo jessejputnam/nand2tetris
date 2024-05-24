@@ -24,34 +24,33 @@ def get_unary_asm(cmd):
 ###################### MEMORY COMMANDS ###################
 
 ## Push
-def get_mem_val_asm(seg, i):
+def get_mem_val_asm(seg, i, file_name):
     if seg == 'constant':
         return f'@{i}\nD=A\n'
     if seg == 'pointer':
         return f'@{'THIS' if i == '0' else 'THAT'}\nD=M\n'
     if seg == 'static':
-        return f'@Foo.{i}\nD=M\n'
+        return f'@{file_name}.{i}\nD=M\n'
     return f'@{seg}\nD=M\n@{i}\nA=A+D\nD=M\n'
 
-def push_to_stack_asm():
-    return f'@SP\nA=M\nM=D\n@SP\nM=M+1\n'
+def push_to_stack_asm(comment=None):
+    comment = '' if not comment else f'  // {comment}'
+    return f'@SP\nA=M\nM=D\n@SP\nM=M+1{comment}\n'
 
-def get_push_asm(seg, i):
-    return f"{get_mem_val_asm(seg, i)}{push_to_stack_asm()}"
+def get_push_asm(seg, i, file_name):
+    return f"{get_mem_val_asm(seg, i, file_name)}{push_to_stack_asm()}"
 
 ## Pop
-def push_to_mem_asm(seg, i):
+def push_to_mem_asm(seg, i, file_name):
     if seg == 'pointer':
         pointer = 'THIS' if i == '0' else 'THAT'
         return f'@{pointer}\nM=D\n'
     if seg == 'static':
-        return f'@Foo.{i}\nM=D\n'
+        return f'@{file_name}.{i}\nM=D\n'
 
-def get_pop_asm(seg, i):
+def get_pop_asm(seg, i, file_name):
     if seg in ['pointer', 'static']:
-        return f'{pop_stack()}{push_to_mem_asm(seg, i)}'
+        return f'{pop_stack()}{push_to_mem_asm(seg, i, file_name)}'
     if seg == 'temp':
-        return f'@5\nD=A\n@{i}\nD=D+A\n@SP\nA=M\nM=D\n{pop_stack()}@SP\nA=M+1\nA=M\nM=D\n'
-    return f'@{seg}\nD=M\n@{i}\nD=D+A\n@SP\nA=M\nM=D\n{pop_stack()}@SP\nA=M+1\nA=M\nM=D\n'
-
-################### BRANCHING COMMANDS ########################
+        return f'@5\nD=A\n@{i}\nD=D+A\n@{L0}\nM=D\n{pop_stack()}@{L0}\nA=M\nM=D\n'
+    return f'@{seg}\nD=M\n@{i}\nD=D+A\n@{L0}\nM=D\n{pop_stack()}@{L0}\nA=M\nM=D\n'
