@@ -9,11 +9,12 @@ from CodeWriter import (
     write_label,
     write_push_pop,
     write_return,
+    write_init,
 )
-from Lib import check_args, get_program_and_files, end_program, clean_line
+from Lib import check_args, get_program_and_files, clean_line
 
 count = 0
-output = ""
+output = write_init()
 
 if __name__ == "__main__":
     try:
@@ -29,7 +30,7 @@ if __name__ == "__main__":
                         continue
 
                     # Write comment
-                    output += f"// {line}\n"
+                    output += f"// ######### {line} ###########\n"
                     instr = line.split(" ")
 
                     if len(instr) == 1:
@@ -54,13 +55,10 @@ if __name__ == "__main__":
                         output += write_function(instr[1], int(instr[2]), count)
 
                     elif instr[0] == "call":
-                        output += write_call(
-                            instr[1], int(instr[2]), f"{file_name}$ret.{count}"
-                        )
+                        ret_name = f"{file_name}_{instr[1]}$ret.{count}"
+                        output += write_call(instr[1], int(instr[2]), ret_name)
 
                     count += 1
-
-            # output += end_program()
 
             # Write to file
             with open(f"{program_name}.asm", "w") as wf:

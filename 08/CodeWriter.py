@@ -57,7 +57,7 @@ def write_push_pop(instruction, file_name):
 
 
 def write_init():
-    pass
+    return f"@256\nD=A\n{write_call("Sys.init", 0, "Sys.init$ret")}"
 
 
 def write_label(label):
