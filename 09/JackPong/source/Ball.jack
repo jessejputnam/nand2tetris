@@ -1,12 +1,12 @@
 class Ball {
     field int x, y;
-    field int dir;
-    // 0 = no dir, 1 = forward, 2 = up, 3 = down
+    field int xStart, yStart;
 
-    constructor Ball new(int ax, int ay, int adir) {
+    constructor Ball new(int ax, int ay) {
         let x = ax;
         let y = ay;
-        let dir = adir;
+        let xStart = ax;
+        let yStart = ay;
         do draw();
         return this;
     }
@@ -25,6 +25,30 @@ class Ball {
     method void erase() {
         do Screen.setColor(false);
         do Screen.drawRectangle(x, y, x + 4, y + 4);
+        return;
+    }
+
+    method void move(int xDir, int yDir) {
+        do erase();
+        let x = x + xDir;
+        let y = y + yDir;
+        do draw();
+        return;
+    }
+
+    method int getX() {
+        return x;
+    }
+
+    method int getY() {
+        return y;
+    }
+
+    method void reset() {
+        do erase();
+        let x = xStart;
+        let y = yStart;
+        do draw();
         return;
     }
 }

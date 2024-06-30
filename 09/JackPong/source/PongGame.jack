@@ -2,15 +2,18 @@ class PongGame {
     field Ball ball;
     field Paddle left;
     field Paddle right;
-    field int dir;
+    field int xDir, yDir;
+    // field int xBall, yBall;
 
     // Screen: 
-    // cols: 0 - 511
-    // rows: 0 - 255
+    // x: 0 - 511
+    // y: 0 - 255
 
     constructor PongGame new() {
-        let dir = 0;
-        let ball = Ball.new(255, 127, 0);
+        let xDir = 0;
+        let yDir = 0;
+        let ball = Ball.new(255, 127);
+
         let left = Paddle.new(15, 103);
         let right = Paddle.new(489, 103);
         return this;
@@ -22,16 +25,73 @@ class PongGame {
         return;
     }
 
+    method void movePaddle(int dir) {
+        if (dir = 1) { do left.moveUp(); }
+        if (dir = 0) { do left.moveDown(); }
+        // do Sys.wait(5);
+        return;
+    }
+
+    method void moveBall() {
+        do ball.move(xDir, yDir);
+        // do Sys.wait(10);
+        return;
+    }
+
     method void run() {
         var char key;
         var boolean exit;
         let exit = false;
 
-        while (~exit) {
-            let key = Keyboard.keyPressed();
+        let xDir = 1;
+        let yDir = -1;
 
+        while (~exit) {
+            // Ball
+            // if wall
+            if (((ball.getX() + 5) + xDir > 511) | (ball.getX() + xDir < 1)) {
+                do left.reset();
+                do right.reset();
+                do ball.reset();
+                let xDir = -1;
+                let yDir = 1;
+            }
+
+            // if ceiling or floor
+            if ((ball.getY() + yDir < 1) | ((ball.getY() + 5) + yDir > 255)) {
+                let yDir = -yDir;
+            }
+
+            // if paddle
+            if (left.hitBall(ball.getX() - 1, ball.getY())) {
+                let xDir = 1;
+            }
+
+            if (right.hitBall(ball.getX() - 4, ball.getY())) {
+                let xDir = -1;
+            }
+
+            // Player Paddle
+            let key = Keyboard.keyPressed();
             if (key = 81) { let exit = true; }
-            if (key = 131) { do left.moveUp(); }
+            if (key = 131) { do movePaddle(1); }
+            if (key = 133) { do movePaddle(0); }
+            do Sys.wait(5);
+
+            // CPU Paddle
+            if (ball.getY() < ((right.getY() + right.getLenY()) / 2)) {
+                do right.moveUp();
+                do Sys.wait(3);
+            }
+            if (ball.getY() > ((right.getY() + right.getLenY()) / 2)) {
+                do right.moveDown();
+                do Sys.wait(3);
+            }
+
+            // move ball
+            do moveBall();
+            do Sys.wait(5);
+            
         }
         return;
     }

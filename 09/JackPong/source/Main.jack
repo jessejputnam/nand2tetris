@@ -5,6 +5,7 @@ class Main {
         
         let game = PongGame.new();
         do game.run();
+        do game.dispose();
         return;
     }
 }

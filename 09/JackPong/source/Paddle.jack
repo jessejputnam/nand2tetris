@@ -1,11 +1,13 @@
 class Paddle {
-    field int x, y;
+    field int x, y, xStart, yStart;
     field int xLen;
     field in yLen;
 
     constructor Paddle new(int ax, int ay) {
         let xLen = 7;
         let yLen = 50;
+        let xStart = ax;
+        let yStart = ay;
         let x = ax;
         let y = ay;
         do draw();
@@ -38,6 +40,46 @@ class Paddle {
             do Screen.setColor(true);
             do Screen.drawRectangle(x, y, x + xLen, y + 1);
         }
+        return;
+    }
+
+    method void moveDown() {
+        if ((y + yLen) < 254) {
+            do Screen.setColor(false);
+            do Screen.drawRectangle(x, y, x + xLen, y + 1);
+            let y = y + 2;
+
+            do Screen.setColor(true);
+            do Screen.drawRectangle(x, (y + yLen) - 1, x + xLen, y + yLen);
+        }
+        return;
+    }
+
+    method int getX() {
+        return x;
+    }
+
+    method int getY() {
+        return y;
+    }
+
+    method int getLenX() {
+        return xLen;
+    }
+
+    method int getLenY() {
+        return yLen;
+    }
+
+    method boolean hitBall(int xBall, int yBall) {
+        return ((xBall = (x + xLen)) & ((yBall > (y - 1)) & (yBall < (y + yLen + 1))));
+    }
+
+    method void reset() {
+        do erase();
+        let x = xStart;
+        let y = yStart;
+        do draw();
         return;
     }
 }
