@@ -1,14 +1,18 @@
 class PongGame {
     field Ball ball;
+    field Paddle left;
+    field Paddle right;
     field int dir;
 
     // Screen: 
-    // rows: 0 - 511
-    // cols: 0 - 255
+    // cols: 0 - 511
+    // rows: 0 - 255
 
     constructor PongGame new() {
         let dir = 0;
         let ball = Ball.new(255, 127, 0);
+        let left = Paddle.new(15, 103);
+        let right = Paddle.new(489, 103);
         return this;
     }
 
@@ -18,5 +22,17 @@ class PongGame {
         return;
     }
 
-    
+    method void run() {
+        var char key;
+        var boolean exit;
+        let exit = false;
+
+        while (~exit) {
+            let key = Keyboard.keyPressed();
+
+            if (key = 81) { let exit = true; }
+            if (key = 131) { do left.moveUp(); }
+        }
+        return;
+    }
 }

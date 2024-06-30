@@ -4,8 +4,7 @@ class Main {
         var int test;
         
         let game = PongGame.new();
-        let test = Keyboard.readInt("How many numbers? ");
-        do game.dispose();
+        do game.run();
         return;
     }
 }
