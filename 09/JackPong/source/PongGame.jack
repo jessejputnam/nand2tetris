@@ -1,0 +1,22 @@
+class PongGame {
+    field Ball ball;
+    field int dir;
+
+    // Screen: 
+    // rows: 0 - 511
+    // cols: 0 - 255
+
+    constructor PongGame new() {
+        let dir = 0;
+        let ball = Ball.new(255, 127, 0);
+        return this;
+    }
+
+    method void dispose() {
+        do ball.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    
+}

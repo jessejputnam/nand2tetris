@@ -1,0 +1,11 @@
+class Main {
+    function void main() {
+        var PongGame game;
+        var int test;
+        
+        let game = PongGame.new();
+        let test = Keyboard.readInt("How many numbers? ");
+        do game.dispose();
+        return;
+    }
+}
