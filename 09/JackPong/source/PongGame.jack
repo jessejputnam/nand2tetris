@@ -67,7 +67,7 @@ class PongGame {
                 let xDir = 1;
             }
 
-            if (right.hitBall(ball.getX() - 4, ball.getY())) {
+            if (right.hitBall(ball.getX() + 12, ball.getY())) {
                 let xDir = -1;
             }
 
@@ -76,21 +76,24 @@ class PongGame {
             if (key = 81) { let exit = true; }
             if (key = 131) { do movePaddle(1); }
             if (key = 133) { do movePaddle(0); }
-            do Sys.wait(5);
+            // do Sys.wait(5);
 
-            // CPU Paddle
-            if (ball.getY() < ((right.getY() + right.getLenY()) / 2)) {
-                do right.moveUp();
-                do Sys.wait(3);
+            if (xDir = 1) {
+                // CPU Paddle
+                if (ball.getY() < (right.getY())) {
+                    do right.moveUp();
+                }
+                else {
+                    if (ball.getY() > (right.getY())) {
+                        do right.moveDown();
+                    }
+                }
             }
-            if (ball.getY() > ((right.getY() + right.getLenY()) / 2)) {
-                do right.moveDown();
-                do Sys.wait(3);
-            }
+
 
             // move ball
             do moveBall();
-            do Sys.wait(5);
+            do Sys.wait(3);
             
         }
         return;
