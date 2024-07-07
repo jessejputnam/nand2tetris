@@ -1,10 +1,20 @@
+from pathlib import Path
+
+from Lib import get_token_file_name
+
+
 class JackTokenizer:
-    def __init__(self, file_path: str):
-        self.input = open(file_path, "r")
+    def __init__(self, file_path: Path):
+        xml_name = get_token_file_name(file_path.name)
+        self.input = file_path.open(mode="r")
+        self.output = Path(file_path.with_name(xml_name)).open(mode="w")
         self.cur_token = None
+        self.output.write("<tokens>\n")
 
     def close(self) -> None:
-        self.file.close()
+        self.output.write("</tokens>")
+        self.output.close()
+        self.input.close()
 
     def has_more_tokens(self) -> bool:
         # Checks if more tokens to retrieve from file

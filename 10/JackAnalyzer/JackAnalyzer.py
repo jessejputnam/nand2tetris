@@ -1,27 +1,26 @@
 import sys
-from Analyzer import Analyzer
+from pathlib import Path
 
+from JackTokenizer import JackTokenizer
 
-def check_args(args: list[str]):
-    if len(args) == 1:
-        raise Exception("No file specified")
-    if len(args) > 2:
-        raise Exception("Too many command line args")
+from Lib import check_args, get_files_list, clean_line
 
 
 if __name__ == "__main__":
     try:
         check_args(sys.argv)
 
-        analyzer = Analyzer(sys.argv[1])
-        analyzer.test_files()
+        files: list[Path] = get_files_list(sys.argv[1])
+        for file in files:
+            tokenizer: JackTokenizer = JackTokenizer(file)
+            tokenizer.close()
 
     # Error Catching
     except FileNotFoundError:
-        print("File not found or cannot be opened.")
+        print("File not found or cannot be opened")
 
     except IOError:
-        print("An I/O error occurred while reading the file.")
+        print("An I/O error occurred while reading the file")
 
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
