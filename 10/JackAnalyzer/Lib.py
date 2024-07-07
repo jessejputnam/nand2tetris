@@ -33,3 +33,27 @@ def is_jack_file(file: Path):
 
 def get_token_file_name(file_name: str):
     return f"{file_name[:-5]}T.xml"
+
+
+def is_symbol(char: str):
+    return char in [
+        "{",
+        "}",
+        "(",
+        ")",
+        "[",
+        "]",
+        ".",
+        ",",
+        ";",
+        "+",
+        "-",
+        "*",
+        "/",
+        "&",
+        "|",
+        "<",
+        ">",
+        "=",
+        "~",
+    ]

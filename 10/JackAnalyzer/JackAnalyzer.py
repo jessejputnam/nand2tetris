@@ -13,6 +13,12 @@ if __name__ == "__main__":
         files: list[Path] = get_files_list(sys.argv[1])
         for file in files:
             tokenizer: JackTokenizer = JackTokenizer(file)
+            print("Advance 1")
+            tokenizer.advance()
+            print("Advance 2")
+            tokenizer.advance()
+            print("Advance 3")
+            tokenizer.advance()
             tokenizer.close()
 
     # Error Catching
