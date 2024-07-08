@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from Lib import get_token_file_name
+from Lib import get_token_file_name, is_symbol
 
 
 class JackTokenizer:
@@ -9,9 +9,30 @@ class JackTokenizer:
         self.input = file_path.open(mode="r")
         self.output = Path(file_path.with_name(xml_name)).open(mode="w")
         self.cur_token = None
-        self.hold_over = None
+        self.end = None
+        self.set_file_end()
 
         self.output.write("<tokens>\n")
+
+    def get_tell(self):
+        return self.input.tell()
+
+    def test_goto(self, tell: int):
+        self.input.seek(tell)
+
+    def test_get_char(self):
+        return self.input.read(1)
+
+    def test_tells(self):
+        for i in range(self.end):
+            self.input.read(1)
+            print(self.get_tell())
+
+    def test_read(self):
+        self.input.read()
+
+    def test(self):
+        print(f"tell: {self.get_tell()}   end: {self.end}")
 
     def close(self) -> None:
         self.output.write("</tokens>")
@@ -20,37 +41,55 @@ class JackTokenizer:
 
     # Checks if more tokens to retrieve from file
     def has_more_tokens(self) -> bool:
-        pass
+        return self.get_tell() != self.end
 
     # Get next token from input and makes it current token
     def advance(self) -> None:
-        self.cur_token = ""
+        token = ""
         is_string_lit = False
 
         while True:
-            # If comment, skip to next line
-            if self.cur_token == r"\\" or r"\**":
-                self.cur_token = ""
-                self.input.readline()
+            c = self.input.read(1)
 
-            # String literals
+            # Move forward if no token and char is whitespace
+            if token == "" and c.isspace():
+                continue
 
-            # c = self.input.read(1)
-            # if self.cur_token == "" and c == '"':
-            #     is_string_lit = True
+            # If start of string literal
+            elif token == "" and c == '"':
+                is_string_lit = True
 
-            # if c == '"' and
+            # stop advancing on space, store token
+            elif c.isspace():
+                self.cur_token = token
+                return
 
-            # if c == " ":
-            #     if is_string_lit:
-            #         self.cur_token[1:-1]
-            #     break
+            elif is_symbol(c):
+                tell = self.input.tell()
 
-            # if c in [".", "(", ";"]:
-            #     self.hold_over = c
-            #     break
+                if token != "":
+                    self.cur_token = token
+                    self.input.seek(tell - 1)
+                    return
 
-            # self.cur_token += c
+                if c == "/":
+                    c2 = self.input.read(1)
+                    if c2 in "/*":
+                        # Comment
+                        self.input.readline()
+                        continue
+                    else:
+                        # Legit symbol
+                        self.input.seek(tell)
+                self.cur_token = c
+                return
+
+            # add character to currently building token
+            else:
+                token += c
+
+    def check_token(self):
+        return self.cur_token
 
     # Returns the type of the current token
     def token_type(self) -> str:
@@ -80,3 +119,9 @@ class JackTokenizer:
         # Returns the string value which is the current token without the enclosing double quotes
         # Can only be called if token_type is STRING_CONST
         pass
+
+    def set_file_end(self):
+        self.input.seek(0, 2)
+        end = self.input.tell()
+        self.input.seek(0)
+        self.end = end

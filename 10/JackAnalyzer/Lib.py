@@ -36,24 +36,34 @@ def get_token_file_name(file_name: str):
 
 
 def is_symbol(char: str):
-    return char in [
-        "{",
-        "}",
-        "(",
-        ")",
-        "[",
-        "]",
-        ".",
-        ",",
-        ";",
-        "+",
-        "-",
-        "*",
-        "/",
-        "&",
-        "|",
-        "<",
-        ">",
-        "=",
-        "~",
+    return char in "{}()[].,;+-*/&|><=~"
+
+
+def is_int(char: str):
+    return char in "0123456789"
+
+
+def is_keyword(token: str):
+    return token in [
+        "class",
+        "constructor",
+        "function",
+        "method",
+        "field",
+        "static",
+        "var",
+        "int",
+        "char",
+        "boolean",
+        "void",
+        "true",
+        "false",
+        "null",
+        "this",
+        "let",
+        "do",
+        "if",
+        "else",
+        "while",
+        "return",
     ]

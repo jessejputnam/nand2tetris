@@ -13,12 +13,15 @@ if __name__ == "__main__":
         files: list[Path] = get_files_list(sys.argv[1])
         for file in files:
             tokenizer: JackTokenizer = JackTokenizer(file)
-            print("Advance 1")
-            tokenizer.advance()
-            print("Advance 2")
-            tokenizer.advance()
-            print("Advance 3")
-            tokenizer.advance()
+            # tokenizer.test_read()
+            # print(tokenizer.get_tell())
+            # tokenizer.input.read(1)
+            # print(tokenizer.get_tell())
+            count = 0
+            while tokenizer.has_more_tokens():
+                count += 1
+                tokenizer.advance()
+                print(f"advance {count}: token: {tokenizer.check_token()}")
             tokenizer.close()
 
     # Error Catching
