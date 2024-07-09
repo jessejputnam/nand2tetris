@@ -3,7 +3,7 @@ from pathlib import Path
 
 from JackTokenizer import JackTokenizer
 
-from Lib import check_args, get_files_list, clean_line
+from Lib import check_args, get_files_list
 
 
 if __name__ == "__main__":
@@ -13,15 +13,11 @@ if __name__ == "__main__":
         files: list[Path] = get_files_list(sys.argv[1])
         for file in files:
             tokenizer: JackTokenizer = JackTokenizer(file)
-            # tokenizer.test_read()
-            # print(tokenizer.get_tell())
-            # tokenizer.input.read(1)
-            # print(tokenizer.get_tell())
             count = 0
             while tokenizer.has_more_tokens():
                 count += 1
                 tokenizer.advance()
-                print(f"advance {count}: token: {tokenizer.check_token()}")
+                tokenizer.write_token()
             tokenizer.close()
 
     # Error Catching

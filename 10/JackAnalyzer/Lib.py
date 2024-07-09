@@ -23,10 +23,6 @@ def get_files_list(arg: str) -> list[Path]:
     return files
 
 
-def clean_line(line):
-    return line.split("//")[0].strip()
-
-
 def is_jack_file(file: Path):
     return file.is_file() and file.suffix == ".jack"
 
