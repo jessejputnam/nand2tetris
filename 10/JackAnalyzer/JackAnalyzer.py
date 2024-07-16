@@ -2,8 +2,9 @@ import sys
 from pathlib import Path
 
 from JackTokenizer import JackTokenizer
+from CompliationEngine import CompilationEngine
 
-from Lib import check_args, get_files_list
+from Lib import check_args, get_files_list, get_token_file_name, get_parsed_file_name
 
 
 if __name__ == "__main__":
@@ -20,12 +21,16 @@ if __name__ == "__main__":
                 tokenizer.write_token()
             tokenizer.close()
 
-    # Error Catching
-    except FileNotFoundError:
-        print("File not found or cannot be opened")
+            token_file = file.with_name(get_token_file_name(file.name))
+            parsed_file = file.with_name(get_parsed_file_name(file.name))
+            comp_engine: CompilationEngine = CompilationEngine(token_file, parsed_file)
 
-    except IOError:
-        print("An I/O error occurred while reading the file")
+    # Error Catching
+    except FileNotFoundError as e:
+        print(f"File not found or cannot be opened: {e}")
+
+    except IOError as e:
+        print(f"An I/O error occurred while reading the file: {e}")
 
     except Exception as e:
         print(f"An unexpected error occurred: {e}")

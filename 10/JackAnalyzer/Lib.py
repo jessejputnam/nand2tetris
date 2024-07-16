@@ -31,6 +31,10 @@ def get_token_file_name(file_name: str):
     return f"{file_name[:-5]}T.xml"
 
 
+def get_parsed_file_name(file_name: str):
+    return f"{file_name[:-5]}.xml"
+
+
 def is_symbol(char: str):
     return char in "{}()[].,;+-*/&|><=~"
 

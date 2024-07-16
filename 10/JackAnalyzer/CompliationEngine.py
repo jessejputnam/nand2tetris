@@ -6,46 +6,45 @@ class CompilationEngine:
         self.token = None
         self.token_body = None
         self.token_type = None
-        self.tokens = None
-        self.output = None
+        self.file_in = None
+        self.file_out = None
 
-        # self.compile_class()
-        with open(input_path, "r") as self.tokens:
-            with open(output_path, "w") as self.output:
+        with open(input_path, "r") as self.file_in:
+            with open(output_path, "w+") as self.file_out:
+                self.set_token()
 
-                for token in self.tokens:
-                    if token in ["<tokens>", "</tokens>"]:
-                        continue
-                    self.set_token(token)
-
-                    if self.token_type == "keyword":
-                        if self.token_body in ["var", "static"]:
-                            self.write("<classVarDec>")
-                            self.compile_class_var_dec()
-                            self.write("</classVarDec>")
-
-    def read_token(self):
-        self.set_token(self.tokens.readLine())
-
-        if self.token == "</tokens>":
-            return
-
-        if self.token_type == "tokens":
-            return self.read_token()
-
-        if self.token_type == "keyword":
-            if self.token_body in ["static", "var"]:
-                self.write("<classVarDec>")
-                self.compile_class_var_dec()
-                self.write("/<classVarDec>")
+                while self.token != "</tokens>":
+                    self.set_token()
+                    if self.token_type == "keyword" and self.token_body == "class":
+                        self.compile_class()
 
     def compile_class(self):
         # Compiles a complete class
-        pass
+        self.write("<class>")
+        self.write(self.token)
+
+        while True:
+            if self.token_type == "symbol" and self.token_body == "}":
+                break
+            self.set_token()
+            if self.token_type == "keyword":
+                # classVarDec
+                if self.token_body in ["static", "field"]:
+                    self.compile_class_var_dec()
+
+            else:
+                self.write(self.token)
+        self.write("</class>")
 
     def compile_class_var_dec(self):
         # Compiles a static variable declaration or field declaration
+        self.write("<classVarDoc>")
         self.write(self.token)
+        while True:
+            if self.token_type == "symbol" and self.token_body == ";":
+                break
+            self.set_token()
+            self.write(self.token)
 
     #    <classVarDec>
     #     <keyword> static </keyword>
@@ -117,9 +116,11 @@ class CompilationEngine:
         pass
 
     def write(self, token: str):
-        self.output.write(f"{token}\n")
+        self.file_out.write(f"{token}\n")
 
-    def set_token(self, token: str):
-        self.token = token
-        self.token_type = token[1 : token.find(">")]
-        self.token_body = token[token.find(">") + 2 : token.rfind("</") - 1]
+    def set_token(self):
+        self.token = self.file_in.readline().strip()
+        self.token_type = self.token[1 : self.token.find(">")]
+        self.token_body = self.token[
+            self.token.find(">") + 2 : self.token.rfind("</") - 1
+        ]

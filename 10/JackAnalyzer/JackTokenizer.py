@@ -7,7 +7,7 @@ class JackTokenizer:
     def __init__(self, file_path: Path):
         xml_name = get_token_file_name(file_path.name)
         self.input = file_path.open(mode="r")
-        self.output = Path(file_path.with_name(xml_name)).open(mode="w")
+        self.output = Path(file_path.with_name(xml_name)).open(mode="w+")
         self.cur_token = None
         self.end = None
         self.set_file_end()
