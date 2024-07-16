@@ -67,3 +67,13 @@ def is_keyword(token: str):
         "while",
         "return",
     ]
+
+
+def sanitize(c: str) -> str:
+    match c:
+        case "<":
+            return "&lt;"
+        case ">":
+            return "&gt;"
+        case _:
+            return c

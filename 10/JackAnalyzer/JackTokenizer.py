@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from Lib import get_token_file_name, is_symbol, is_int, is_keyword
+from Lib import get_token_file_name, is_symbol, is_int, is_keyword, sanitize
 
 
 class JackTokenizer:
@@ -135,7 +135,7 @@ class JackTokenizer:
     def symbol(self) -> str:
         # Returns the character which is the current token
         # Can only be called if token_type is SYMBOL
-        return f"<symbol> {self.cur_token} </symbol>"
+        return f"<symbol> {sanitize(self.cur_token)} </symbol>"
 
     def identifier(self) -> str:
         # Returns the identifier which is the current token
