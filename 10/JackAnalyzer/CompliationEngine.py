@@ -8,6 +8,7 @@ class CompilationEngine:
         self.token_type = None
         self.file_in = None
         self.file_out = None
+        self.prefix = 0
 
         with open(input_path, "r") as self.file_in:
             with open(output_path, "w+") as self.file_out:
@@ -17,8 +18,6 @@ class CompilationEngine:
                     self.set_token()
                     if self.is_class_dec():
                         self.compile_class()
-                    # elif self.is_subroutine():
-                    #     self.compile_subroutine_dec()
 
     def compile_class(self):
         # Compiles a complete class
@@ -26,16 +25,23 @@ class CompilationEngine:
         self.write()
 
         while True:
+            self.set_token()
+
             if self.is_block_end():
                 break
-            self.set_token()
+
             if self.token_type == "keyword":
                 # classVarDec
                 if self.token_body in ["static", "field"]:
                     self.compile_class_var_dec()
+                    continue
+                # subroutine
+                if self.is_subroutine():
+                    self.compile_subroutine_dec()
+                    continue
 
-            else:
-                self.write(self.token)
+            self.write()
+        self.write()
         self.write("</class>")
 
     def compile_class_var_dec(self):
@@ -43,27 +49,32 @@ class CompilationEngine:
         self.write("<classVarDec>")
         self.write()
         while True:
+            self.set_token()
             if self.is_statement_end():
                 break
-            self.set_token()
             self.write()
-        self.write("</class>")
+        self.write()
+        self.write("</classVarDec>")
 
     def compile_subroutine_dec(self):
         # Compiles a complete method, function, or constructor
         self.write("<subroutineDec>")
         self.write()
         while True:
+            self.set_token()
             if self.is_block_end():
                 break
-            self.set_token()
+
             if self.token_type == "symbol":
                 if self.token_body == "(":
                     self.compile_parameter_list()
-                elif self.token_body == "{":
+                    continue
+                if self.token_body == "{":
                     self.compile_subroutine_body()
-            else:
-                self.write()
+                    break
+            self.write()
+
+        self.write("</subroutineDec>")
 
     def compile_parameter_list(self):
         # Compiles a possibly empty parameter list. Does not handle enclosing "()"
@@ -71,7 +82,7 @@ class CompilationEngine:
         self.write("<parameterList>")
         while True:
             self.set_token()
-            if self.token_type == "symbol" and self.token_body == ")":
+            if self.is_parens_end():
                 break
             self.write()
         self.write("</parameterList>")
@@ -80,28 +91,70 @@ class CompilationEngine:
     def compile_subroutine_body(self):
         # Compiles a subroutine's body
         self.write("<subroutineBody>")
-        #####################################################
-        #####################################################
-        #####################################################
-        #####################################################
-        ############  STOPPED HEREER #######################
-        #####################################################
-        #####################################################
-        #####################################################
+        self.write()
+        while True:
+            self.set_token()
+
+            if self.token_type == "keyword" and self.token_body == "var":
+                self.compile_var_dec()
+                continue
+            self.compile_statements()
+            break
+
+        self.write()
         self.write("</subroutineBody>")
 
     def compile_var_dec(self):
         # Compiles a var declaration
-        pass
+        self.write("<varDec>")
+        self.write()
+        while True:
+            self.set_token()
+            if self.is_statement_end():
+                break
+            self.write()
+        self.write()
+        self.write("</varDec>")
 
     def compile_statements(self):
         # Compiles a sequence of statements. Does not handle the enclosing "{}"
-        pass
+        self.write("<statements>")
+        
+
+        while True:
+            if self.is_block_end():
+                break
+
+            if self.token_type == "keyword" and self.token_body == "let":
+                self.compile_let()
+            elif self.token_type == "keyword" and self.token_body == "if":
+                self.compile_if()
+            elif self.token_type == "keyword" and self.token_body == "while":
+                self.compile_while()
+            elif self.token_type == "keyword" and self.token_body == "do":
+                self.compile_do()
+            elif self.token_type == "keyword" and self.token_body == "return":
+                self.compile_return()
+                break
+
+            self.set_token()
+        self.write("</statements>")
 
     def compile_let(self):
         # Compiles a let statement
         self.write("<letStatement>")
         self.write()
+        while True:
+            self.set_token()
+
+            if self.token_type == "symbol" and self.token_body == "=":
+                self.write()
+                self.compile_expression()
+                break
+            self.write()
+
+        self.write()
+        self.write("</letStatement>")
 
     def compile_if(self):
         # Compiles an if statement, possibly with a trailing else clause
@@ -120,8 +173,15 @@ class CompilationEngine:
         pass
 
     def compile_expression(self):
-        # Compiles an esxpression
-        pass
+        # Compiles an expression
+        self.write("<expression>")
+        while True:
+            self.set_token()
+            if self.is_statement_end():
+                break
+            self.compile_term()
+
+        self.write("</expression>")
 
     def compile_term(self):
         # Compiles a term.
@@ -129,14 +189,24 @@ class CompilationEngine:
         #   - a variable, an array entry, or a subroutine call.
         # A single look-ahead token, which may be [, (, or . suffices to distiguish
         # Any other is not a part of this term and should be advanced over
-        pass
+        self.write("<term>")
+        self.write()
+        self.write("</term>")
 
     def compile_expression_list(self):
         # Compiles a possibly empty comma-separated list of expressions
         pass
 
-    def write(self, token: str = None):
-        self.file_out.write(f"{token or self.token}\n")
+    def write(self, token = None):
+        if token is None:
+            self.file_out.write(f"{"  "*self.prefix}{self.token}\n")
+        else: 
+            if token[1] == "/":
+                self.untab()
+                self.file_out.write(f"{"  "*self.prefix}{token}\n")
+            else:
+                self.file_out.write(f"{"  "*self.prefix}{token}\n")
+                self.tab()
 
     def set_token(self):
         self.token = self.file_in.readline().strip()
@@ -159,4 +229,13 @@ class CompilationEngine:
         return self.token_type == "symbol" and self.token_body == ";"
 
     def is_block_end(self):
-        self.token_type == "symbol" and self.token_body == "}"
+        return self.token_type == "symbol" and self.token_body == "}"
+
+    def is_parens_end(self):
+        return self.token_type == "symbol" and self.token_body == ")"
+    
+    def tab(self):
+        self.prefix += 1
+
+    def untab(self):
+        self.prefix -= 1
