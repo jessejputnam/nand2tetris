@@ -71,9 +71,10 @@ class CompilationEngine:
                     continue
                 if self.token_body == "{":
                     self.compile_subroutine_body()
+                    self.set_token()
                     break
             self.write()
-
+        self.write()
         self.write("</subroutineDec>")
 
     def compile_parameter_list(self):
@@ -166,18 +167,40 @@ class CompilationEngine:
 
     def compile_do(self):
         # Compiles a do statement
-        pass
+        self.write("<doStatement>")
+        self.write()
+        while True:
+            self.set_token()
+
+            if self.is_statement_end():
+                break
+            elif self.token_type == "symbol" and self.token_body == "(":
+                self.compile_expression_list()
+            else:
+                self.write()
+
+        self.write()
+        self.write("</doStatement>")
 
     def compile_return(self):
         # Compiles a return statement
-        pass
+        self.write("<returnStatement>")
+        self.write()
+        while True:
+            self.set_token()
+            if self.is_statement_end():
+                break
+            self.write()
+
+        self.write()
+        self.write("</returnStatement>")
 
     def compile_expression(self):
         # Compiles an expression
         self.write("<expression>")
         while True:
             self.set_token()
-            if self.is_statement_end():
+            if self.is_expr_end():
                 break
             self.compile_term()
 
@@ -195,7 +218,20 @@ class CompilationEngine:
 
     def compile_expression_list(self):
         # Compiles a possibly empty comma-separated list of expressions
-        pass
+        self.write()
+        self.write("<expressionList>")
+        while True:
+            self.set_token()
+            if self.is_parens_end():
+                break
+
+            self.compile_expression()
+
+            if self.is_parens_end():
+                break
+            self.write()
+        self.write("</expressionList>")
+        self.write()
 
     def write(self, token = None):
         if token is None:
@@ -234,6 +270,12 @@ class CompilationEngine:
     def is_parens_end(self):
         return self.token_type == "symbol" and self.token_body == ")"
     
+    def is_expr_end(self):
+        if self.token_type == "symbol":
+            if self.token_body == "," or self.token_body == ")" or self.token_body == ";":
+                return True
+        return False
+
     def tab(self):
         self.prefix += 1
 
