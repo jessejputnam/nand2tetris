@@ -24,6 +24,7 @@ if __name__ == "__main__":
             token_file = file.with_name(get_token_file_name(file.name))
             parsed_file = file.with_name(get_parsed_file_name(file.name))
             comp_engine: CompilationEngine = CompilationEngine(token_file, parsed_file)
+        print("Files successfully compiled")
 
     # Error Catching
     except FileNotFoundError as e:
