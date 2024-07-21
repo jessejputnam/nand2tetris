@@ -9,15 +9,25 @@ class CompilationEngine:
         self.file_in = None
         self.file_out = None
         self.prefix = 0
+        self.count = 0
 
         with open(input_path, "r") as self.file_in:
             with open(output_path, "w+") as self.file_out:
                 self.set_token()
-
-                while self.token != "</tokens>":
+                if self.token != "<tokens>":
+                    raise Exception(f"encountered unexpected token while starting file compilation: {self.token}")
+                
+                while True:
                     self.set_token()
+                    if self.token is None:
+                        raise Exception("encountered NULL while compiling file")
+
                     if self.is_class_dec():
                         self.compile_class()
+                    elif self.token == "</tokens>":
+                        break
+                    else:
+                        raise Exception(f"Encountered incorrect token while compiling file: {self.token}")
 
     def compile_class(self):
         # Compiles a complete class
@@ -26,21 +36,22 @@ class CompilationEngine:
 
         while True:
             self.set_token()
+            if not self.token:
+                raise Exception("Encountered NULL token while compiling class")
 
             if self.is_block_end():
                 break
 
-            if self.token_type == "keyword":
-                # classVarDec
-                if self.token_body in ["static", "field"]:
-                    self.compile_class_var_dec()
-                    continue
-                # subroutine
-                if self.is_subroutine():
-                    self.compile_subroutine_dec()
-                    continue
-
-            self.write()
+            if self.token_type == "identifier":
+                self.write()
+            elif self.is_block_start():
+                self.write()
+            elif self.token_type == "keyword" and self.token_body in ["static", "field"]:
+                self.compile_class_var_dec()
+            elif self.is_subroutine():
+                self.compile_subroutine_dec()
+            else:
+                raise Exception(f"Encountered unexpected token while compiling class {self.token}")
         self.write()
         self.write("</class>")
 
@@ -50,6 +61,8 @@ class CompilationEngine:
         self.write()
         while True:
             self.set_token()
+            if self.token is None:
+                raise Exception("Encountered incorrect token while compiling variable declaration")
             if self.is_statement_end():
                 break
             self.write()
@@ -62,6 +75,8 @@ class CompilationEngine:
         self.write()
         while True:
             self.set_token()
+            if self.token is None:
+                raise Exception("encountered NULL while compiling subroutine declaration")
             if self.is_block_end():
                 break
 
@@ -71,10 +86,8 @@ class CompilationEngine:
                     continue
                 if self.token_body == "{":
                     self.compile_subroutine_body()
-                    self.set_token()
                     break
             self.write()
-        self.write()
         self.write("</subroutineDec>")
 
     def compile_parameter_list(self):
@@ -83,6 +96,8 @@ class CompilationEngine:
         self.write("<parameterList>")
         while True:
             self.set_token()
+            if self.token is None:
+                raise Exception("encountered NULL while compiling parameter list")
             if self.is_parens_end():
                 break
             self.write()
@@ -95,6 +110,8 @@ class CompilationEngine:
         self.write()
         while True:
             self.set_token()
+            if self.token is None:
+                raise Exception("encountered NULL while compiling subroutine body")
 
             if self.token_type == "keyword" and self.token_body == "var":
                 self.compile_var_dec()
@@ -111,6 +128,8 @@ class CompilationEngine:
         self.write()
         while True:
             self.set_token()
+            if self.token is None:
+                raise Exception("encountered NULL while compiling variable declaration")
             if self.is_statement_end():
                 break
             self.write()
@@ -120,26 +139,30 @@ class CompilationEngine:
     def compile_statements(self):
         # Compiles a sequence of statements. Does not handle the enclosing "{}"
         self.write("<statements>")
-        
-
         while True:
-            if self.is_block_end():
-                break
+            if self.token is None:
+                raise Exception("encountered NULL while compiling statements")
 
+            if self.is_block_end():
+                self.write("</statements>")
+                return
             if self.token_type == "keyword" and self.token_body == "let":
                 self.compile_let()
             elif self.token_type == "keyword" and self.token_body == "if":
                 self.compile_if()
+                continue
             elif self.token_type == "keyword" and self.token_body == "while":
                 self.compile_while()
             elif self.token_type == "keyword" and self.token_body == "do":
                 self.compile_do()
             elif self.token_type == "keyword" and self.token_body == "return":
                 self.compile_return()
+                self.write("</statements>")
                 break
-
+            else:
+                raise Exception(f"encountered unexpected token while compiling statements {self.token}")
             self.set_token()
-        self.write("</statements>")
+        self.set_token()
 
     def compile_let(self):
         # Compiles a let statement
@@ -147,6 +170,8 @@ class CompilationEngine:
         self.write()
         while True:
             self.set_token()
+            if self.token is None:
+                raise Exception("encountered NULL while compiling let statement")
 
             if self.token_type == "symbol" and self.token_body == "=":
                 self.write()
@@ -159,7 +184,31 @@ class CompilationEngine:
 
     def compile_if(self):
         # Compiles an if statement, possibly with a trailing else clause
-        pass
+        self.write("<ifStatement>")
+        self.write()
+        
+        while True:
+            self.set_token()
+
+            if self.token is None:
+                raise Exception("encountered NULL while compiling if statement")
+            
+            elif self.is_parens_start():
+                self.write()
+                self.compile_expression()
+                self.write()
+            elif self.is_block_start():
+                self.write()
+                self.set_token()
+                self.compile_statements()
+                self.write()
+            elif self.token_type == "keyword" and self.token_body == "else":
+                self.write()
+            else:
+                break
+        
+        self.write("</ifStatement>")
+        
 
     def compile_while(self):
         # Compiles a while statement
@@ -171,10 +220,12 @@ class CompilationEngine:
         self.write()
         while True:
             self.set_token()
+            if self.token is None:
+                raise Exception("encountered NULL while compiling do statement")
 
             if self.is_statement_end():
                 break
-            elif self.token_type == "symbol" and self.token_body == "(":
+            elif self.is_parens_start():
                 self.compile_expression_list()
             else:
                 self.write()
@@ -188,6 +239,8 @@ class CompilationEngine:
         self.write()
         while True:
             self.set_token()
+            if self.token is None:
+                raise Exception("encountered NULL while compiling return statement")
             if self.is_statement_end():
                 break
             self.write()
@@ -200,6 +253,8 @@ class CompilationEngine:
         self.write("<expression>")
         while True:
             self.set_token()
+            if self.token is None:
+                raise Exception("encountered NULL while compiling expression")
             if self.is_expr_end():
                 break
             self.compile_term()
@@ -222,6 +277,8 @@ class CompilationEngine:
         self.write("<expressionList>")
         while True:
             self.set_token()
+            if self.token is None:
+                raise Exception("encountered NULL while compiling expression list")
             if self.is_parens_end():
                 break
 
@@ -245,6 +302,7 @@ class CompilationEngine:
                 self.tab()
 
     def set_token(self):
+        self.count += 1
         self.token = self.file_in.readline().strip()
         self.token_type = self.token[1 : self.token.find(">")]
         self.token_body = self.token[
@@ -266,9 +324,13 @@ class CompilationEngine:
 
     def is_block_end(self):
         return self.token_type == "symbol" and self.token_body == "}"
+    def is_block_start(self):
+        return self.token_type == "symbol" and self.token_body == "{"
 
     def is_parens_end(self):
         return self.token_type == "symbol" and self.token_body == ")"
+    def is_parens_start(self):
+        return self.token_type == "symbol" and self.token_body == "("
     
     def is_expr_end(self):
         if self.token_type == "symbol":
@@ -281,3 +343,9 @@ class CompilationEngine:
 
     def untab(self):
         self.prefix -= 1
+
+    def pointer(self):
+        return self.file_in.tell()
+
+    def jump_file_line(self, pointer: int):
+        self.file_in.seek(pointer)
