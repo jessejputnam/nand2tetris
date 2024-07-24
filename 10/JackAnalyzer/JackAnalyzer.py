@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import traceback
 
 from JackTokenizer import JackTokenizer
 from CompliationEngine import CompilationEngine
@@ -35,3 +36,4 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+        # traceback.print_exc()

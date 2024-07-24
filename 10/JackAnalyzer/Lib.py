@@ -75,5 +75,7 @@ def sanitize(c: str) -> str:
             return "&lt;"
         case ">":
             return "&gt;"
+        case "&":
+            return "&amp;"
         case _:
             return c

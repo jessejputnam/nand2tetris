@@ -81,6 +81,15 @@ class JackTokenizer:
                 # potential comment
                 if c == "/":
                     c2 = self.input.read(1)
+                    if c2 == "/":
+                        self.input.readline()
+                        continue
+                    if c2 == "*":
+                        l = self.input.readline().strip()
+                        while l[-2:] != "*/":
+                            l = self.input.readline().strip()
+                        continue
+
                     if c2 in "/*":
                         # comment
                         self.input.readline()
