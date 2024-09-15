@@ -69,8 +69,8 @@ def is_keyword(token: str):
     ]
 
 
-def sanitize(c: str) -> str:
-    match c:
+def sanitize(char: str) -> str:
+    match char:
         case "<":
             return "&lt;"
         case ">":
@@ -78,10 +78,10 @@ def sanitize(c: str) -> str:
         case "&":
             return "&amp;"
         case _:
-            return c
+            return char
 
 
 def safe_true(count: int) -> bool:
     if count > 5000:
-        raise Exception("Compiler hit an infinite loop")
+        raise Exception(f"Compiler hit the predefined safe limit of {count} lines.")
     return True
