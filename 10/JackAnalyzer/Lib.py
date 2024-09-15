@@ -79,3 +79,9 @@ def sanitize(c: str) -> str:
             return "&amp;"
         case _:
             return c
+
+
+def safe_true(count: int) -> bool:
+    if count > 5000:
+        raise Exception("Compiler hit an infinite loop")
+    return True

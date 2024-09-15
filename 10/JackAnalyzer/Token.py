@@ -29,7 +29,7 @@ class Token:
 
     def is_expr_end(self) -> bool:
         if self.token_type == "symbol":
-            if self.token_body in [",", ")", ";", ",", "]"]:
+            if self.token_body in [",", ")", ";", "]"]:
                 return True
         return False
 

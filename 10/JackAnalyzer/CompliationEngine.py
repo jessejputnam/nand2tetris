@@ -1,5 +1,5 @@
 from Token import Token
-
+from Lib import safe_true
 
 class CompilationEngine:
     def __init__(self, input_path: str, output_path: str):
@@ -16,7 +16,7 @@ class CompilationEngine:
                 if self.get_token() != "<tokens>":
                     raise Exception(f"encountered unexpected token while starting file compilation: {self.get_token()}")
                 
-                while True:
+                while safe_true(self.count):
                     self.set_token()
                     if self.get_token() is None:
                         raise Exception("encountered NULL while compiling file")
@@ -33,7 +33,7 @@ class CompilationEngine:
         self.write("<class>")
         self.write()
 
-        while True:
+        while safe_true(self.count):
             self.set_token()
             if not self.get_token():
                 raise Exception("Encountered NULL token while compiling class")
@@ -58,7 +58,7 @@ class CompilationEngine:
         # Compiles a static variable declaration or field declaration
         self.write("<classVarDec>")
         self.write()
-        while True:
+        while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
                 raise Exception("Encountered incorrect token while compiling variable declaration")
@@ -72,7 +72,7 @@ class CompilationEngine:
         # Compiles a complete method, function, or constructor
         self.write("<subroutineDec>")
         self.write()
-        while True:
+        while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling subroutine declaration")
@@ -93,7 +93,7 @@ class CompilationEngine:
         # Compiles a possibly empty parameter list. Does not handle enclosing "()"
         self.write()
         self.write("<parameterList>")
-        while True:
+        while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling parameter list")
@@ -107,7 +107,7 @@ class CompilationEngine:
         # Compiles a subroutine's body
         self.write("<subroutineBody>")
         self.write()
-        while True:
+        while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling subroutine body")
@@ -125,7 +125,7 @@ class CompilationEngine:
         # Compiles a var declaration
         self.write("<varDec>")
         self.write()
-        while True:
+        while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling variable declaration")
@@ -138,7 +138,7 @@ class CompilationEngine:
     def compile_statements(self):
         # Compiles a sequence of statements. Does not handle the enclosing "{}"
         self.write("<statements>")
-        while True:
+        while safe_true(self.count):
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling statements")
 
@@ -188,7 +188,7 @@ class CompilationEngine:
         self.write("<ifStatement>")
         self.write()
         
-        while True:
+        while safe_true(self.count):
             self.set_token()
 
             if self.get_token() is None:
@@ -216,7 +216,7 @@ class CompilationEngine:
         self.write("<whileStatement>")
         self.write()
 
-        while True:
+        while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling while statement")
@@ -237,7 +237,7 @@ class CompilationEngine:
         # Compiles a do statement
         self.write("<doStatement>")
         self.write()
-        while True:
+        while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling do statement")
@@ -263,7 +263,7 @@ class CompilationEngine:
             self.write("</returnStatement>")
             return
         
-        while True:
+        while safe_true(self.count):
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling return statement")
             if self.token.is_statement_end():
@@ -278,16 +278,14 @@ class CompilationEngine:
         self.write("<expression>")
         self.set_token()
         self.compile_term()
-        self.set_token()
-        if self.token.is_expr_end():
-            self.write("</expression>")
-            return
-        self.write()
-        self.set_token()
-        self.compile_term()
-        self.set_token()
-
-        self.write("</expression>")
+        while safe_true(self.count):
+            self.set_token()
+            if self.token.is_expr_end():
+                self.write("</expression>")
+                return
+            self.write()
+            self.set_token()
+            self.compile_term()
 
     def compile_term(self):
         # Compiles a term.
@@ -298,16 +296,15 @@ class CompilationEngine:
         self.write("<term>")
         if self.token.is_unary_op():
             self.write()
-            if self.prev_token.is_parens_start():
-                self.set_token()
-                self.compile_term()
+            self.set_token()
+            self.compile_term()
 
         elif self.token.is_parens_start():
             self.write()
             self.compile_expression()
             self.write()
 
-        elif self.token_type() == "identifier" or self.token.is_keyword_const():
+        elif self.token_type() == "identifier":
             self.write()
             next_token = Token(self.look_ahead())
 
@@ -342,7 +339,7 @@ class CompilationEngine:
             self.write()
             return
 
-        while True:
+        while safe_true(self.count):
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling expression list")
             if self.token.is_parens_end():

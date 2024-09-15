@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
-import traceback
+
+# import traceback
 
 from JackTokenizer import JackTokenizer
 from CompliationEngine import CompilationEngine
