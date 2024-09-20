@@ -20,6 +20,12 @@ class Token:
     def is_class_dec(self) -> bool:
         return self.token_type == "keyword" and self.token_body == "class"
 
+    def is_class_var_dec(self) -> bool:
+        return self.token_type == "keyword" and self.token_body in [
+            "static",
+            "field",
+        ]
+
     def is_subroutine(self) -> bool:
         return self.token_type == "keyword" and self.token_body in [
             "method",

@@ -7,7 +7,8 @@ comm_type = Literal["ADD", "SUB", "NEG", "EQ", "GT", "LT", "AND", "OR", "NOT"]
 class VMWriter:
     def __init__(self, output):
         # Creates new output .vm file and prepares it for writing
-        pass
+        self.output = open(f"{output}.vm", "w")
+        self.output.write(f"// VM Code for {output} program\n\n")
 
     def write_push(self, segment: seg_type, index: int):
         # Writes a VM push command
@@ -47,4 +48,4 @@ class VMWriter:
 
     def close(self):
         # Closes the output file
-        pass
+        self.output.close()

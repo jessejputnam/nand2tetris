@@ -35,6 +35,10 @@ def get_parsed_file_name(file_name: str):
     return f"{file_name[:-5]}.xml"
 
 
+def get_vm_file_name(file_name: str):
+    return f"{file_name[:-5]}.vm"
+
+
 def is_symbol(char: str):
     return char in "{}()[].,;+-*/&|><=~"
 
