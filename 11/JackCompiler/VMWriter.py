@@ -9,7 +9,8 @@ class VMWriter:
     def __init__(self, output):
         # Creates new output .vm file and prepares it for writing
         self.output = open(f"{output}", "w")
-        self.output.write(f"// VM Code for {output} program\n\n")
+        program_name = str(output).split("/")[-2]
+        self.output.write(f"// VM Code for program: {program_name}\n\n")
 
     def write_push(self, segment: seg_type, index: int):
         # Writes a VM push command
