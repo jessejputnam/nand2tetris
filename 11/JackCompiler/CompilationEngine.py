@@ -1,8 +1,9 @@
 from VMWriter import VMWriter
-from Token import Token
-from Lib import safe_true
+from SymbolTable import SymbolTable
+from lib.Token import Token
+from lib.Lib import safe_true, get_op
 
-from Errs import (
+from lib.Errs import (
     bad_var_dec,
     start_err,
     bad_token,
@@ -17,26 +18,33 @@ class CompilationEngine:
         self.token = Token()
         self.file_in = None
         self.vw = VMWriter(output_path)
+        self.sym_table = SymbolTable()
         self.class_name = None
+        self.subroutine_name = None
         self.prev_token = None
         self.count = 0
 
-        with open(input_path, "r") as self.file_in:
-            self.set_token()
-            if self.get_token() != "<tokens>":
-                raise Exception(start_err(self.get_token()))
-
-            while safe_true(self.count):
+        try:
+            with open(input_path, "r") as self.file_in:
                 self.set_token()
-                if self.get_token() is None:
-                    raise Exception("encountered NULL while compiling file")
+                if self.get_token() != "<tokens>":
+                    raise Exception(start_err(self.get_token()))
 
-                if self.token.is_class_dec():
-                    self.compile_class()
-                elif self.get_token() == "</tokens>":
-                    break
-                else:
-                    raise Exception(bad_token(self.get_token))
+                while safe_true(self.count):
+                    self.set_token()
+                    if self.get_token() is None:
+                        raise Exception("encountered NULL while compiling file")
+
+                    if self.token.is_class_dec():
+                        self.compile_class()
+                    elif self.get_token() == "</tokens>":
+                        break
+                    else:
+                        raise Exception(bad_token(self.get_token))
+        except Exception as err:
+            print(err)
+        finally:
+            self.vw.close()
 
     def compile_class(self):
         # Compiles a complete class
@@ -80,6 +88,10 @@ class CompilationEngine:
 
     def compile_subroutine_dec(self):
         # Compiles a complete method, function, or constructor
+        self.subroutine_name = None
+        self.sym_table.define("this", self.class_name, "ARG")
+        return_type = None
+
         while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
@@ -95,21 +107,20 @@ class CompilationEngine:
                 if self.token_body() == "{":
                     self.compile_subroutine_body()
                     break
-            print(self.get_token())
+
+            if return_type is None:
+                return_type = self.token_body()
+            elif self.subroutine_name is None:
+                self.subroutine_name = self.token_body()
 
     def compile_parameter_list(self):
         # Compiles a possibly empty parameter list. Does not handle enclosing "()"
-        # self.write()
-        # self.write("<parameterList>")
         while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling parameter list")
             if self.token.is_parens_end():
                 break
-            # self.write()
-        # self.write("</parameterList>")
-        # self.write()
 
     def compile_subroutine_body(self):
         # Compiles a subroutine's body
@@ -123,6 +134,11 @@ class CompilationEngine:
             if self.token_type() == "keyword" and self.token_body() == "var":
                 self.compile_var_dec()
                 continue
+
+            self.vw.write_function(
+                f"{self.class_name}.{self.subroutine_name}",
+                self.sym_table.var_count("VAR"),
+            )
             self.compile_statements()
             break
 
@@ -241,8 +257,7 @@ class CompilationEngine:
 
     def compile_do(self):
         # Compiles a do statement
-        # self.write("<doStatement>")
-        # self.write()
+        call = ""
         while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
@@ -253,8 +268,8 @@ class CompilationEngine:
             elif self.token.is_parens_start():
                 self.compile_expression_list()
             else:
-                pass
-                # self.write()
+                call += self.token_body()
+        print(call)
         # self.write()
         # self.write("</doStatement>")
 
@@ -281,36 +296,37 @@ class CompilationEngine:
     def compile_expression(self):
         # Compiles an expression
         # self.write("<expression>")
+        op = None
         self.set_token()
         self.compile_term()
         while safe_true(self.count):
             self.set_token()
             if self.token.is_expr_end():
-                # self.write("</expression>")
+                print(op)
+                if op == "*":
+                    self.vw.write_call("Math.multiply", 2)
+                elif op == "/":
+                    self.vw.write_call("Math.divide", 2)
+                else:
+                    self.vw.write_arithmetic(get_op(op))
                 return
-            # self.write()
+            op = self.token_body()
+            print(op)
             self.set_token()
             self.compile_term()
 
     def compile_term(self):
         # Compiles a term.
-        # If the current token is an identifier, routine must distinguish between:
-        #   - a variable, an array entry, or a subroutine call.
-        # A single look-ahead token, which may be [, (, or . suffices to distiguish
-        # Any other is not a part of this term and should be advanced over
-        # self.write("<term>")
         if self.token.is_unary_op():
-            # self.write()
+            op = self.token_body()
             self.set_token()
             self.compile_term()
+            self.vw.write_arithmetic("NOT" if op == "~" else "NEG")
 
         elif self.token.is_parens_start():
-            # self.write()
             self.compile_expression()
-            # self.write()
 
         elif self.token_type() == "identifier":
-            # self.write()
             next_token = Token(self.look_ahead())
 
             if next_token.is_arr_start():
@@ -330,7 +346,7 @@ class CompilationEngine:
                 self.set_token()
                 self.compile_expression_list()
         else:
-            pass
+            self.push_term()
         #     self.write()
         # self.write("</term>")
 
@@ -352,23 +368,14 @@ class CompilationEngine:
                 break
 
             self.compile_expression()
+            ###########################
+            # if self.token.is_parens_end(): # MIGHT NEED DO NOT REMOVE
+            #     break
+            #############################
 
-            if self.token.is_parens_end():
-                break
         #     self.write()
         # self.write("</expressionList>")
         # self.write()
-
-    # def write(self, token = None):
-    #     if token is None:
-    #         self.file_out.write(f"{"  "*self.prefix}{self.get_token()}\n")
-    #     else:
-    #         if token[1] == "/":
-    #             self.untab()
-    #             self.file_out.write(f"{"  "*self.prefix}{token}\n")
-    #         else:
-    #             self.file_out.write(f"{"  "*self.prefix}{token}\n")
-    #             self.tab()
 
     def set_token(self, x: int = 1):
         self.count += x
@@ -376,12 +383,6 @@ class CompilationEngine:
             self.prev_token = Token(self.get_token())
         token = self.file_in.readline().strip()
         self.token.set(token)
-
-    # def tab(self):
-    #     self.prefix += 1
-
-    # def untab(self):
-    #     self.prefix -= 1
 
     def pointer(self) -> int:
         return self.file_in.tell()
@@ -403,3 +404,7 @@ class CompilationEngine:
 
     def token_body(self) -> str:
         return self.token.token_body
+
+    def push_term(self) -> None:
+        if self.token_type() == "integerConstant":
+            self.vw.write_push("CONST", int(self.token_body()))

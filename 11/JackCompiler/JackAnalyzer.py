@@ -4,7 +4,7 @@ from pathlib import Path
 from JackTokenizer import JackTokenizer
 from CompilationEngine import CompilationEngine
 
-from Lib import (
+from lib.Lib import (
     check_args,
     get_files_list,
     get_token_file_name,
@@ -30,7 +30,7 @@ if __name__ == "__main__":
             vm_file = file.with_name(get_vm_file_name(file.name))
             # parsed_file = file.with_name(get_parsed_file_name(file.name))
 
-            comp_engine = CompilationEngine(token_file)
+            comp_engine = CompilationEngine(token_file, vm_file)
         print("Files successfully compiled")
 
     # Error Catching

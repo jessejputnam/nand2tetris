@@ -1,6 +1,12 @@
 from pathlib import Path
 
-from Lib import get_token_file_name, is_symbol, is_int, is_keyword, sanitize
+from lib.Lib import (
+    get_token_file_name,
+    is_symbol,
+    is_int,
+    is_keyword,
+    sanitize,
+)
 
 
 class JackTokenizer:

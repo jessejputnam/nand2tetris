@@ -89,3 +89,23 @@ def safe_true(count: int) -> bool:
     if count > 5000:
         raise Exception(f"Compiler hit the predefined safe limit of {count} lines.")
     return True
+
+
+def get_op(op: str):
+    match op:
+        case "+":
+            return "ADD"
+        case "-":
+            return "SUB"
+        case "=":
+            return "EQ"
+        case "&gt;":
+            return "GT"
+        case "&lt;":
+            return "LT"
+        case "&amp;":
+            return "AND"
+        case "|":
+            return "OR"
+        case _:
+            raise Exception(f"Invalid operator: {op}")

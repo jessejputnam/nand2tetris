@@ -1,5 +1,5 @@
-from Token import Token
-from Lib import safe_true
+from lib.Token import Token
+from lib.Lib import safe_true
 
 class CompilationEngine:
     def __init__(self, input_path: str, output_path: str):
