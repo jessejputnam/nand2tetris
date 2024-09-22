@@ -91,6 +91,14 @@ def safe_true(count: int) -> bool:
     return True
 
 
+def get_seg(segment: str):
+    return (
+        "constant"
+        if segment == "CONST"
+        else "argument" if segment == "ARG" else segment.lower()
+    )
+
+
 def get_op(op: str):
     match op:
         case "+":

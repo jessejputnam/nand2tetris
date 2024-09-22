@@ -16,13 +16,17 @@ from lib.Errs import (
 class CompilationEngine:
     def __init__(self, input_path: str, output_path: str):
         self.token = Token()
-        self.file_in = None
-        self.vw = VMWriter(output_path)
-        self.sym_table = SymbolTable()
-        self.class_name = None
-        self.subroutine_name = None
         self.prev_token = None
         self.count = 0
+
+        self.file_in = None
+
+        self.vw = VMWriter(output_path)
+        self.sym_table = SymbolTable()
+
+        self.class_name = None
+        self.sub_name = None
+        self.sub_return_type = None
 
         try:
             with open(input_path, "r") as self.file_in:
@@ -88,9 +92,9 @@ class CompilationEngine:
 
     def compile_subroutine_dec(self):
         # Compiles a complete method, function, or constructor
-        self.subroutine_name = None
+        self.sub_name = None
         self.sym_table.define("this", self.class_name, "ARG")
-        return_type = None
+        self.sub_return_type = None
 
         while safe_true(self.count):
             self.set_token()
@@ -108,10 +112,10 @@ class CompilationEngine:
                     self.compile_subroutine_body()
                     break
 
-            if return_type is None:
-                return_type = self.token_body()
-            elif self.subroutine_name is None:
-                self.subroutine_name = self.token_body()
+            if self.sub_return_type is None:
+                self.sub_return_type = self.token_body()
+            elif self.sub_name is None:
+                self.sub_name = self.token_body()
 
     def compile_parameter_list(self):
         # Compiles a possibly empty parameter list. Does not handle enclosing "()"
@@ -136,7 +140,7 @@ class CompilationEngine:
                 continue
 
             self.vw.write_function(
-                f"{self.class_name}.{self.subroutine_name}",
+                f"{self.class_name}.{self.sub_name}",
                 self.sym_table.var_count("VAR"),
             )
             self.compile_statements()
@@ -269,9 +273,8 @@ class CompilationEngine:
                 self.compile_expression_list()
             else:
                 call += self.token_body()
-        print(call)
-        # self.write()
-        # self.write("</doStatement>")
+        self.vw.write_call(call, 1)
+        self.vw.write_pop("TEMP", 0)
 
     def compile_return(self):
         # Compiles a return statement
@@ -279,12 +282,16 @@ class CompilationEngine:
         # self.write()
         next_token = self.look_ahead()
         if next_token == "<symbol> ; </symbol>":
+            if self.sub_return_type != "void":
+                raise Exception("Expected return values but encountered VOID.")
             self.set_token()
-            # self.write()
-            # self.write("</returnStatement>")
+            self.vw.write_push("CONST", 0)
+            self.vw.write_return()
             return
 
         while safe_true(self.count):
+            if self.sub_return_type == "void":
+                raise Exception("Expected VOID return but encountered value(s).")
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling return statement")
             if self.token.is_statement_end():
@@ -302,7 +309,6 @@ class CompilationEngine:
         while safe_true(self.count):
             self.set_token()
             if self.token.is_expr_end():
-                print(op)
                 if op == "*":
                     self.vw.write_call("Math.multiply", 2)
                 elif op == "/":
@@ -311,7 +317,7 @@ class CompilationEngine:
                     self.vw.write_arithmetic(get_op(op))
                 return
             op = self.token_body()
-            print(op)
+
             self.set_token()
             self.compile_term()
 
@@ -347,8 +353,6 @@ class CompilationEngine:
                 self.compile_expression_list()
         else:
             self.push_term()
-        #     self.write()
-        # self.write("</term>")
 
     def compile_expression_list(self):
         # Compiles a possibly empty comma-separated list of expressions
