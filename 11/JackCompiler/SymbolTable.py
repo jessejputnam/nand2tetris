@@ -69,3 +69,16 @@ class SymbolTable:
             return self.class_vars[name]["idx"]
         else:
             return "NONE"
+
+    def print_table(self, table_type):
+        if table_type == "class":
+            pass
+        if table_type == "sub":
+            print("\n\n")
+            print("|     name     |   type   |   kind   |  idx  |")
+            print(f" {"- " * 22}-")
+            for line in self.sub_vars.items():
+                print(
+                    f"|{line[0].center(14, " ")}|{line[1]["type"].center(10, " ")}|{line[1]["kind"].center(10, " ")}|{str(line[1]["idx"]).center(7, " ")}|"
+                )
+            print("\n\n")

@@ -51,7 +51,7 @@ class CompilationEngine:
             self.vw.close()
 
     def compile_class(self):
-        # Compiles a complete class
+        """Compiles a complete class"""
         # self.write("<class>")
         # self.write()
 
@@ -77,7 +77,7 @@ class CompilationEngine:
         # self.write("</class>")
 
     def compile_class_var_dec(self):
-        # Compiles a static variable declaration or field declaration
+        """Compiles a static variable declaration or field declaration"""
         # self.write("<classVarDec>")
         # self.write()
         while safe_true(self.count):
@@ -91,7 +91,7 @@ class CompilationEngine:
         # self.write("</classVarDec>")
 
     def compile_subroutine_dec(self):
-        # Compiles a complete method, function, or constructor
+        """Compiles a complete method, function, or constructor"""
         self.sub_name = None
         self.sym_table.define("this", self.class_name, "ARG")
         self.sub_return_type = None
@@ -118,7 +118,8 @@ class CompilationEngine:
                 self.sub_name = self.token_body()
 
     def compile_parameter_list(self):
-        # Compiles a possibly empty parameter list. Does not handle enclosing "()"
+        """Compiles a possibly empty parameter list.
+        Does not handle enclosing '()'"""
         while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
@@ -127,9 +128,7 @@ class CompilationEngine:
                 break
 
     def compile_subroutine_body(self):
-        # Compiles a subroutine's body
-        # self.write("<subroutineBody>")
-        # self.write()
+        """Compiles a subroutine's body"""
         while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
@@ -139,29 +138,27 @@ class CompilationEngine:
                 self.compile_var_dec()
                 continue
 
-            self.vw.write_function(
-                f"{self.class_name}.{self.sub_name}",
-                self.sym_table.var_count("VAR"),
-            )
+            func_name = f"{self.class_name}.{self.sub_name}"
+            local_count = self.sym_table.var_count("VAR")
+            self.vw.write_function(func_name, local_count)
             self.compile_statements()
             break
 
-        # self.write()
-        # self.write("</subroutineBody>")
-
     def compile_var_dec(self):
-        # Compiles a var declaration
-        # self.write("<varDec>")
-        # self.write()
+        """Compiles a var declaration"""
+        var_type, var_name = None, None
         while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling variable declaration")
             if self.token.is_statement_end():
                 break
-            # self.write()
-        # self.write()
-        # self.write("</varDec>")
+
+            if var_type is None:
+                var_type = self.token_body()
+            elif var_name is None:
+                var_name = self.token_body()
+        self.sym_table.define(var_name, var_type, "VAR")
 
     def compile_statements(self):
         # Compiles a sequence of statements. Does not handle the enclosing "{}"
@@ -309,6 +306,8 @@ class CompilationEngine:
         while safe_true(self.count):
             self.set_token()
             if self.token.is_expr_end():
+                if op is None:
+                    return
                 if op == "*":
                     self.vw.write_call("Math.multiply", 2)
                 elif op == "/":
@@ -356,13 +355,9 @@ class CompilationEngine:
 
     def compile_expression_list(self):
         # Compiles a possibly empty comma-separated list of expressions
-        # self.write()
-        # self.write("<expressionList>")
         next_token = Token(self.look_ahead())
         if next_token.is_parens_end():
-            # self.write("</expressionList>")
             self.set_token()
-            # self.write()
             return
 
         while safe_true(self.count):
