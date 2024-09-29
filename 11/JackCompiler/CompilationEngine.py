@@ -29,6 +29,7 @@ class CompilationEngine:
         self.sub_return_type = None
 
         self.call_arg_count = None
+        self.loop_count = 0
 
         try:
             with open(input_path, "r") as self.file_in:
@@ -224,8 +225,6 @@ class CompilationEngine:
 
     def compile_if(self):
         # Compiles an if statement, possibly with a trailing else clause
-        # self.write("<ifStatement>")
-        # self.write()
 
         while safe_true(self.count):
             self.set_token()
@@ -251,25 +250,26 @@ class CompilationEngine:
 
     def compile_while(self):
         # Compiles a while statement
-        # self.write("<whileStatement>")
-        # self.write()
+        self.loop_count += 1
+        loop_label = f"LOOP{self.loop_count}"
+        self.vw.write_label(loop_label)
 
         while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling while statement")
             elif self.token.is_parens_start():
-                # self.write()
                 self.compile_expression()
-                # self.write()
+
+                self.vw.write_arithmetic("NOT")
+                self.vw.write_if(f"{loop_label}_END")
             elif self.token.is_block_start():
-                # self.write()
                 self.set_token()
                 self.compile_statements()
-                # self.write()
+                self.vw.write_goto(loop_label)
             else:
                 break
-        # self.write("</whileStatement>")
+        self.vw.write_label(f"{loop_label}_END")
 
     def compile_do(self):
         # Compiles a do statement
