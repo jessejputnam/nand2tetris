@@ -95,6 +95,7 @@ class CompilationEngine:
     def compile_subroutine_dec(self):
         """Compiles a complete method, function, or constructor"""
         self.sub_name = None
+        self.sym_table.start_subroutine()
         self.sym_table.define("this", self.class_name, "ARG")
         self.sub_return_type = None
 
@@ -122,12 +123,26 @@ class CompilationEngine:
     def compile_parameter_list(self):
         """Compiles a possibly empty parameter list.
         Does not handle enclosing '()'"""
+        var_type = None
+        var_name = None
+
         while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling parameter list")
             if self.token.is_parens_end():
-                break
+                if var_type is not None and var_name is not None:
+                    self.sym_table.define(var_name, var_type, "ARG")
+                    var_type, var_name = None, None
+                return
+
+            if var_type is None:
+                var_type = self.token_body()
+            elif var_name is None:
+                var_name = self.token_body()
+            else:
+                self.sym_table.define(var_name, var_type, "ARG")
+                var_type, var_name = None, None
 
     def compile_subroutine_body(self):
         """Compiles a subroutine's body"""
@@ -194,10 +209,8 @@ class CompilationEngine:
     def compile_let(self):
         # Compiles a let statement
         self.set_token()
-        #  Get variable location name
         var_kind = self.sym_table.kind_of(self.token_body())
         var_idx = self.sym_table.index_of(self.token_body())
-        var_loc = f"{self.var_convert(var_kind)} {var_idx}"
 
         next_token = Token(self.look_ahead())
         if next_token.is_arr_start():
@@ -207,7 +220,7 @@ class CompilationEngine:
             # self.write()
         self.set_token()
         self.compile_expression()
-        self.vw.write_pop(self.var_convert(var_kind), var_idx)
+        self.vw.write_pop(var_kind, var_idx)
 
     def compile_if(self):
         # Compiles an if statement, possibly with a trailing else clause
@@ -353,7 +366,7 @@ class CompilationEngine:
             else:
                 var_kind = self.sym_table.kind_of(self.token_body())
                 var_idx = self.sym_table.index_of(self.token_body())
-                self.vw.write_push(self.var_convert(var_kind), var_idx)
+                self.vw.write_push(var_kind, var_idx)
 
         else:
             self.push_term()
@@ -414,14 +427,6 @@ class CompilationEngine:
     def push_term(self) -> None:
         if self.token_type() == "integerConstant":
             self.vw.write_push("CONST", int(self.token_body()))
-        else:
-            print(self.get_token())
-            # self.vw.write_push
-
-    def var_convert(self, var_type: str) -> str:
-        if var_type == "VAR":
-            return "local"
-        elif var_type == "ARG":
-            return "argument"
-        else:
-            return var_type.lower()
+        # else:
+        # print(self.get_token())
+        # self.vw.write_push

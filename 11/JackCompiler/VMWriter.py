@@ -14,15 +14,15 @@ class VMWriter:
 
     def write_push(self, segment: seg_type, index: int):
         # Writes a VM push command
-        self.output.write(f"push {get_seg(segment)} {index}\n")
+        self.output.write(f"\tpush {get_seg(segment)} {index}\n")
 
     def write_pop(self, segment: seg_type, index: int):
         # Writes a VM pop command
-        self.output.write(f"pop {get_seg(segment)} {index}\n")
+        self.output.write(f"\tpop {get_seg(segment)} {index}\n")
 
     def write_arithmetic(self, command: comm_type):
         # Writes a VM arithemtic-logical command
-        self.output.write(f"{command.lower()}\n")
+        self.output.write(f"\t{command.lower()}\n")
 
     def write_label(self, label: str):
         # Writes a VM label command
@@ -38,7 +38,7 @@ class VMWriter:
 
     def write_call(self, name: str, n_args: int):
         # Writes a VM call command
-        self.output.write(f"call {name} {n_args}\n")
+        self.output.write(f"\tcall {name} {n_args}\n")
 
     def write_function(self, name: str, n_locals: int):
         # Writes a VM function command
@@ -46,7 +46,7 @@ class VMWriter:
 
     def write_return(self):
         # Writes a VM return command
-        self.output.write("return\n")
+        self.output.write("\treturn\n")
 
     def close(self):
         # Closes the output file

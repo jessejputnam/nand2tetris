@@ -29,7 +29,12 @@ class SymbolTable:
         # Defines a new identifier given name, type, and kind, then assigns it a running index
         # kinds: [STATIC, FIELD, ARG, VAR] -- STATIC and FIELD have a class scope, ARG and VAR have subroutine scope
         idx = self.var_count(kind)
-        self.sub_vars[name] = {"type": type, "kind": var[kind], "idx": idx}
+        if kind in ['ARG', 'VAR']:
+            self.sub_vars[name] = {"type": type, "kind": var[kind], "idx": idx}
+        elif kind in ['STATIC', 'FIELD']:
+            self.class_vars[name] = {'type': type, 'kind': var[kind], 'idx': idx}
+        else:
+            raise Exception(f'Unknown variable kind for {kind} variable: {type} {name}')
         return
 
     def var_count(self, kind: str) -> int:
@@ -40,6 +45,7 @@ class SymbolTable:
             )
 
         scope = self.class_vars if kind in ["STATIC", "FIELD"] else self.sub_vars
+        # print(f"--- {[x for x in scope.values() if x["kind"] == var[kind]]}")
         return len([x for x in scope.values() if x["kind"] == var[kind]])
 
     def kind_of(self, name: str) -> kind_output:

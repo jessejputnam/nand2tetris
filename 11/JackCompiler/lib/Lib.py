@@ -92,11 +92,14 @@ def safe_true(count: int) -> bool:
 
 
 def get_seg(segment: str):
-    return (
-        "constant"
-        if segment == "CONST"
-        else "argument" if segment == "ARG" else segment.lower()
-    )
+    if segment == "CONST":
+        return "constant"
+    elif segment == "ARG":
+        return "argument"
+    elif segment == "VAR":
+        return "local"
+    else:
+        return segment.lower()
 
 
 def get_op(op: str):
