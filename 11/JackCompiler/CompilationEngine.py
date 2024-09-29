@@ -28,6 +28,8 @@ class CompilationEngine:
         self.sub_name = None
         self.sub_return_type = None
 
+        self.call_arg_count = None
+
         try:
             with open(input_path, "r") as self.file_in:
                 self.set_token()
@@ -191,10 +193,12 @@ class CompilationEngine:
 
     def compile_let(self):
         # Compiles a let statement
-        # self.write("<letStatement>")
-        # self.write()
         self.set_token()
-        # self.write()
+        #  Get variable location name
+        var_kind = self.sym_table.kind_of(self.token_body())
+        var_idx = self.sym_table.index_of(self.token_body())
+        var_loc = f"{self.var_convert(var_kind)} {var_idx}"
+
         next_token = Token(self.look_ahead())
         if next_token.is_arr_start():
             self.set_token()
@@ -202,10 +206,8 @@ class CompilationEngine:
             self.compile_expression()
             # self.write()
         self.set_token()
-        # self.write()
         self.compile_expression()
-        # self.write()
-        # self.write("</letStatement>")
+        self.vw.write_pop(self.var_convert(var_kind), var_idx)
 
     def compile_if(self):
         # Compiles an if statement, possibly with a trailing else clause
@@ -270,13 +272,12 @@ class CompilationEngine:
                 self.compile_expression_list()
             else:
                 call += self.token_body()
-        self.vw.write_call(call, 1)
+        self.vw.write_call(call, self.call_arg_count)
+        self.call_arg_count = None
         self.vw.write_pop("TEMP", 0)
 
     def compile_return(self):
         # Compiles a return statement
-        # self.write("<returnStatement>")
-        # self.write()
         next_token = self.look_ahead()
         if next_token == "<symbol> ; </symbol>":
             if self.sub_return_type != "void":
@@ -294,12 +295,9 @@ class CompilationEngine:
             if self.token.is_statement_end():
                 break
             self.compile_expression()
-        # self.write()
-        # self.write("</returnStatement>")
 
     def compile_expression(self):
         # Compiles an expression
-        # self.write("<expression>")
         op = None
         self.set_token()
         self.compile_term()
@@ -333,7 +331,6 @@ class CompilationEngine:
 
         elif self.token_type() == "identifier":
             next_token = Token(self.look_ahead())
-
             if next_token.is_arr_start():
                 self.set_token()
                 # self.write()
@@ -344,17 +341,26 @@ class CompilationEngine:
                 self.compile_expression_list()
                 # self.write()
             elif next_token.token_type == "symbol" and next_token.token_body == ".":
+                call = self.token_body()
                 self.set_token()
-                # self.write()
+                call = call + self.token_body()
                 self.set_token()
-                # self.write()
+                call = call + self.token_body()
                 self.set_token()
                 self.compile_expression_list()
+                self.vw.write_call(call, self.call_arg_count)
+                self.call_arg_count = None
+            else:
+                var_kind = self.sym_table.kind_of(self.token_body())
+                var_idx = self.sym_table.index_of(self.token_body())
+                self.vw.write_push(self.var_convert(var_kind), var_idx)
+
         else:
             self.push_term()
 
     def compile_expression_list(self):
         # Compiles a possibly empty comma-separated list of expressions
+        self.call_arg_count = 0
         next_token = Token(self.look_ahead())
         if next_token.is_parens_end():
             self.set_token()
@@ -366,6 +372,7 @@ class CompilationEngine:
             if self.token.is_parens_end():
                 break
 
+            self.call_arg_count = self.call_arg_count + 1
             self.compile_expression()
             ###########################
             # if self.token.is_parens_end(): # MIGHT NEED DO NOT REMOVE
@@ -407,3 +414,14 @@ class CompilationEngine:
     def push_term(self) -> None:
         if self.token_type() == "integerConstant":
             self.vw.write_push("CONST", int(self.token_body()))
+        else:
+            print(self.get_token())
+            # self.vw.write_push
+
+    def var_convert(self, var_type: str) -> str:
+        if var_type == "VAR":
+            return "local"
+        elif var_type == "ARG":
+            return "argument"
+        else:
+            return var_type.lower()
