@@ -30,6 +30,7 @@ class CompilationEngine:
 
         self.call_arg_count = None
         self.loop_count = 0
+        self.if_count = 0
 
         try:
             with open(input_path, "r") as self.file_in:
@@ -97,7 +98,8 @@ class CompilationEngine:
         """Compiles a complete method, function, or constructor"""
         self.sub_name = None
         self.sym_table.start_subroutine()
-        self.sym_table.define("this", self.class_name, "ARG")
+        if self.token_body == "method":
+            self.sym_table.define("this", self.class_name, "ARG")
         self.sub_return_type = None
 
         while safe_true(self.count):
@@ -158,6 +160,8 @@ class CompilationEngine:
 
             func_name = f"{self.class_name}.{self.sub_name}"
             local_count = self.sym_table.var_count("VAR")
+            # print(f"-----------{func_name} {local_count}---------\n")
+            # print(self.sym_table.print_table("sub"))
             self.vw.write_function(func_name, local_count)
             self.compile_statements()
             break
@@ -176,17 +180,18 @@ class CompilationEngine:
                 var_type = self.token_body()
             elif var_name is None:
                 var_name = self.token_body()
+            elif self.token_type() == "symbol" and self.token_body() == ",":
+                self.sym_table.define(var_name, var_type, "VAR")
+                var_name = None
         self.sym_table.define(var_name, var_type, "VAR")
 
     def compile_statements(self):
         # Compiles a sequence of statements. Does not handle the enclosing "{}"
-        # self.write("<statements>")
         while safe_true(self.count):
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling statements")
 
             if self.token.is_block_end():
-                # self.write("</statements>")
                 return
             if self.token_type() == "keyword" and self.token_body() == "let":
                 self.compile_let()
@@ -200,7 +205,6 @@ class CompilationEngine:
                 self.compile_do()
             elif self.token_type() == "keyword" and self.token_body() == "return":
                 self.compile_return()
-                # self.write("</statements>")
                 break
             else:
                 raise Exception(bad_statement(self.get_token(), self.count))
@@ -225,7 +229,11 @@ class CompilationEngine:
 
     def compile_if(self):
         # Compiles an if statement, possibly with a trailing else clause
-
+        # ! ##################
+        # TODO IF statements not skipping over ELSE statements on completion
+        # ! ###################
+        self.if_count += 1
+        if_label = f"IF_{self.if_count}"
         while safe_true(self.count):
             self.set_token()
 
@@ -233,25 +241,22 @@ class CompilationEngine:
                 raise Exception("encountered NULL while compiling if statement")
 
             elif self.token.is_parens_start():
-                # self.write()
                 self.compile_expression()
-                # self.write()
+                self.vw.write_arithmetic("NOT")
+                self.vw.write_if(f"{if_label}_ELSE")
             elif self.token.is_block_start():
-                # self.write()
                 self.set_token()
                 self.compile_statements()
-                # self.write()
             elif self.token_type() == "keyword" and self.token_body() == "else":
-                # self.write()
+                self.vw.write_label(f"{if_label}_ELSE")
                 pass
             else:
                 break
-        # self.write("</ifStatement>")
 
     def compile_while(self):
         # Compiles a while statement
         self.loop_count += 1
-        loop_label = f"LOOP{self.loop_count}"
+        loop_label = f"LOOP_{self.loop_count}"
         self.vw.write_label(loop_label)
 
         while safe_true(self.count):
@@ -308,6 +313,7 @@ class CompilationEngine:
             if self.token.is_statement_end():
                 break
             self.compile_expression()
+            self.vw.write_return()
 
     def compile_expression(self):
         # Compiles an expression
@@ -427,6 +433,17 @@ class CompilationEngine:
     def push_term(self) -> None:
         if self.token_type() == "integerConstant":
             self.vw.write_push("CONST", int(self.token_body()))
+        elif self.token_type() == "keyword":
+            if self.token_body() == "true":
+                self.vw.write_push("CONST", 0)
+                self.vw.write_arithmetic("NOT")
+            elif self.token_body() == "false":
+                self.vw.write_push("CONST", 0)
+            else:
+                raise Exception("Unrecognized keyword encountered while pushing term")
+        else:
+            raise Exception("Unrecognized token_type while pushing term")
+
         # else:
         # print(self.get_token())
         # self.vw.write_push

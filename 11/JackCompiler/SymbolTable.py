@@ -45,7 +45,6 @@ class SymbolTable:
             )
 
         scope = self.class_vars if kind in ["STATIC", "FIELD"] else self.sub_vars
-        # print(f"--- {[x for x in scope.values() if x["kind"] == var[kind]]}")
         return len([x for x in scope.values() if x["kind"] == var[kind]])
 
     def kind_of(self, name: str) -> kind_output:
@@ -80,11 +79,11 @@ class SymbolTable:
         if table_type == "class":
             pass
         if table_type == "sub":
-            print("\n\n")
+            print("\n")
             print("|     name     |   type   |   kind   |  idx  |")
             print(f" {"- " * 22}-")
             for line in self.sub_vars.items():
                 print(
                     f"|{line[0].center(14, " ")}|{line[1]["type"].center(10, " ")}|{line[1]["kind"].center(10, " ")}|{str(line[1]["idx"]).center(7, " ")}|"
                 )
-            print("\n\n")
+            print("\n")

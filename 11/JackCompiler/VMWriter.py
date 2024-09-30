@@ -26,7 +26,7 @@ class VMWriter:
 
     def write_label(self, label: str):
         # Writes a VM label command
-        self.output.write(f"\tlabel {label}\n")
+        self.output.write(f"label {label}\n")
 
     def write_goto(self, label: str):
         # Writes a VM goto command
