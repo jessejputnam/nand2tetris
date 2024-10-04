@@ -229,9 +229,6 @@ class CompilationEngine:
 
     def compile_if(self):
         # Compiles an if statement, possibly with a trailing else clause
-        # ! ##################
-        # TODO IF statements not skipping over ELSE statements on completion
-        # ! ###################
         self.if_count += 1
         if_label = f"IF_{self.if_count}"
         while safe_true(self.count):
@@ -248,10 +245,11 @@ class CompilationEngine:
                 self.set_token()
                 self.compile_statements()
             elif self.token_type() == "keyword" and self.token_body() == "else":
+                self.vw.write_goto(f"{if_label}_END")
                 self.vw.write_label(f"{if_label}_ELSE")
-                pass
             else:
                 break
+        self.vw.write_label(f"{if_label}_END")
 
     def compile_while(self):
         # Compiles a while statement
