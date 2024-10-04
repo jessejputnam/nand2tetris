@@ -86,7 +86,7 @@ def sanitize(char: str) -> str:
 
 
 def safe_true(count: int) -> bool:
-    if count > 5000:
+    if count > 10000:
         raise Exception(f"Compiler hit the predefined safe limit of {count} lines.")
     return True
 

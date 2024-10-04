@@ -52,13 +52,11 @@ class CompilationEngine:
         except Exception as err:
             print(err)
         finally:
+            # self.sym_table.print_table("class")
             self.vw.close()
 
     def compile_class(self):
         """Compiles a complete class"""
-        # self.write("<class>")
-        # self.write()
-
         while safe_true(self.count):
             self.set_token()
             if not self.get_token():
@@ -77,29 +75,37 @@ class CompilationEngine:
                 self.compile_subroutine_dec()
             else:
                 raise Exception(bad_class_token(self.get_token(), self.count))
-        # self.write()
-        # self.write("</class>")
 
     def compile_class_var_dec(self):
         """Compiles a static variable declaration or field declaration"""
-        # self.write("<classVarDec>")
-        # self.write()
+        var_kind, var_type, var_name = self.token_body().upper(), None, None
         while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
                 raise Exception(bad_var_dec())
             if self.token.is_statement_end():
                 break
-            # self.write()
-        # self.write()
-        # self.write("</classVarDec>")
+
+            if var_type is None:
+                var_type = self.token_body()
+            elif var_name is None:
+                var_name = self.token_body()
+            elif self.token_type() == "symbol" and self.token_body() == ",":
+                self.sym_table.define(var_name, var_type, var_kind)
+                var_name = None
+        self.sym_table.define(var_name, var_type, var_kind)
 
     def compile_subroutine_dec(self):
         """Compiles a complete method, function, or constructor"""
         self.sub_name = None
         self.sym_table.start_subroutine()
-        if self.token_body == "method":
+        if self.token_body() == "method":
             self.sym_table.define("this", self.class_name, "ARG")
+        if self.token_body() == "constructor":
+            #!###################
+            # TODO implement constructor
+            #!####################
+            pass
         self.sub_return_type = None
 
         while safe_true(self.count):
@@ -124,10 +130,8 @@ class CompilationEngine:
                 self.sub_name = self.token_body()
 
     def compile_parameter_list(self):
-        """Compiles a possibly empty parameter list.
-        Does not handle enclosing '()'"""
-        var_type = None
-        var_name = None
+        """Compiles a possibly empty parameter list. Does not handle enclosing '()'"""
+        var_type, var_name = None, None
 
         while safe_true(self.count):
             self.set_token()
@@ -160,8 +164,6 @@ class CompilationEngine:
 
             func_name = f"{self.class_name}.{self.sub_name}"
             local_count = self.sym_table.var_count("VAR")
-            # print(f"-----------{func_name} {local_count}---------\n")
-            # print(self.sym_table.print_table("sub"))
             self.vw.write_function(func_name, local_count)
             self.compile_statements()
             break
@@ -396,10 +398,6 @@ class CompilationEngine:
             #     break
             #############################
 
-        #     self.write()
-        # self.write("</expressionList>")
-        # self.write()
-
     def set_token(self, x: int = 1):
         self.count += x
         if x == 1:
@@ -437,10 +435,16 @@ class CompilationEngine:
                 self.vw.write_arithmetic("NOT")
             elif self.token_body() == "false":
                 self.vw.write_push("CONST", 0)
+            elif self.token_body() == "this":
+                self.vw.write_push("ARG", 0)
             else:
-                raise Exception("Unrecognized keyword encountered while pushing term")
+                raise Exception(
+                    f"Unrecognized keyword encountered while pushing term: {self.token_body()}"
+                )
         else:
-            raise Exception("Unrecognized token_type while pushing term")
+            raise Exception(
+                f"Unrecognized token_type while pushing term: {self.token_type()}"
+            )
 
         # else:
         # print(self.get_token())
