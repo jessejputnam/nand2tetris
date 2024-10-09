@@ -98,6 +98,8 @@ def get_seg(segment: str):
         return "argument"
     elif segment == "VAR":
         return "local"
+    elif segment == "FIELD":
+        return "this"
     else:
         return segment.lower()
 

@@ -97,15 +97,12 @@ class CompilationEngine:
 
     def compile_subroutine_dec(self):
         """Compiles a complete method, function, or constructor"""
+
         self.sub_name = None
         self.sym_table.start_subroutine()
         if self.token_body() == "method":
             self.sym_table.define("this", self.class_name, "ARG")
-        if self.token_body() == "constructor":
-            #!###################
-            # TODO implement constructor
-            #!####################
-            pass
+
         self.sub_return_type = None
 
         while safe_true(self.count):
@@ -152,6 +149,7 @@ class CompilationEngine:
                 var_type, var_name = None, None
 
     def compile_subroutine_body(self):
+        # TODO ISSUES WITH THIS BEING PUSHED PRIOR TO METHOD CALLS
         """Compiles a subroutine's body"""
         while safe_true(self.count):
             self.set_token()
@@ -165,6 +163,10 @@ class CompilationEngine:
             func_name = f"{self.class_name}.{self.sub_name}"
             local_count = self.sym_table.var_count("VAR")
             self.vw.write_function(func_name, local_count)
+            if self.sub_name == "new":
+                self.vw.write_push("CONST", self.sym_table.var_count("FIELD"))
+                self.vw.write_call("Memory.alloc", 1)
+                self.vw.write_pop("POINTER", 0)
             self.compile_statements()
             break
 
@@ -231,6 +233,7 @@ class CompilationEngine:
 
     def compile_if(self):
         # Compiles an if statement, possibly with a trailing else clause
+        open_if = True
         self.if_count += 1
         if_label = f"IF_{self.if_count}"
         while safe_true(self.count):
@@ -248,8 +251,13 @@ class CompilationEngine:
                 self.compile_statements()
             elif self.token_type() == "keyword" and self.token_body() == "else":
                 self.vw.write_goto(f"{if_label}_END")
+                open_if = False
                 self.vw.write_label(f"{if_label}_ELSE")
             else:
+                # self.vw.write_goto(f"{if_label}_END")
+                if open_if:
+                    open_if = False
+                    self.vw.write_label(f"{if_label}_ELSE")
                 break
         self.vw.write_label(f"{if_label}_END")
 
@@ -289,7 +297,14 @@ class CompilationEngine:
             elif self.token.is_parens_start():
                 self.compile_expression_list()
             else:
-                call += self.token_body()
+                if len(call) == 0:
+                    call = (
+                        self.token_body()
+                        if self.sym_table.type_of(self.token_body()) == "NONE"
+                        else self.sym_table.type_of(self.token_body())
+                    )
+                else:
+                    call += self.token_body()
         self.vw.write_call(call, self.call_arg_count)
         self.call_arg_count = None
         self.vw.write_pop("TEMP", 0)
@@ -302,6 +317,15 @@ class CompilationEngine:
                 raise Exception("Expected return values but encountered VOID.")
             self.set_token()
             self.vw.write_push("CONST", 0)
+            self.vw.write_return()
+            return
+
+        if self.sub_name == "new":
+            self.set_token()
+            if self.token_body() != "this":
+                raise Exception("Constructors must return THIS")
+            self.set_token()
+            self.vw.write_push("POINTER", 0)
             self.vw.write_return()
             return
 
@@ -393,10 +417,6 @@ class CompilationEngine:
 
             self.call_arg_count = self.call_arg_count + 1
             self.compile_expression()
-            ###########################
-            # if self.token.is_parens_end(): # MIGHT NEED DO NOT REMOVE
-            #     break
-            #############################
 
     def set_token(self, x: int = 1):
         self.count += x
@@ -445,7 +465,3 @@ class CompilationEngine:
             raise Exception(
                 f"Unrecognized token_type while pushing term: {self.token_type()}"
             )
-
-        # else:
-        # print(self.get_token())
-        # self.vw.write_push

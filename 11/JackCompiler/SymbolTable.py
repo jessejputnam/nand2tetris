@@ -37,7 +37,7 @@ class SymbolTable:
             raise Exception(f'Unknown variable kind for {kind} variable: {type} {name}')
         return
 
-    def var_count(self, kind: str) -> int:
+    def var_count(self, kind: kind_input) -> int:
         # Returns the number of variables of the given kind already defined in the current scope
         if kind not in ["STATIC", "FIELD", "ARG", "VAR"]:
             raise Exception(
