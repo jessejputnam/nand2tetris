@@ -27,6 +27,7 @@ class CompilationEngine:
         self.class_name = None
         self.sub_name = None
         self.sub_return_type = None
+        self.is_method = None
 
         self.call_arg_count = None
         self.loop_count = 0
@@ -102,6 +103,7 @@ class CompilationEngine:
         self.sym_table.start_subroutine()
         if self.token_body() == "method":
             self.sym_table.define("this", self.class_name, "ARG")
+            self.is_method = True
 
         self.sub_return_type = None
 
@@ -149,7 +151,6 @@ class CompilationEngine:
                 var_type, var_name = None, None
 
     def compile_subroutine_body(self):
-        # TODO ISSUES WITH THIS BEING PUSHED PRIOR TO METHOD CALLS
         """Compiles a subroutine's body"""
         while safe_true(self.count):
             self.set_token()
@@ -166,6 +167,11 @@ class CompilationEngine:
             if self.sub_name == "new":
                 self.vw.write_push("CONST", self.sym_table.var_count("FIELD"))
                 self.vw.write_call("Memory.alloc", 1)
+                self.vw.write_pop("POINTER", 0)
+
+            if self.is_method:
+                self.is_method = None
+                self.vw.write_push("ARG", 0)
                 self.vw.write_pop("POINTER", 0)
             self.compile_statements()
             break
@@ -254,7 +260,6 @@ class CompilationEngine:
                 open_if = False
                 self.vw.write_label(f"{if_label}_ELSE")
             else:
-                # self.vw.write_goto(f"{if_label}_END")
                 if open_if:
                     open_if = False
                     self.vw.write_label(f"{if_label}_ELSE")
@@ -286,6 +291,7 @@ class CompilationEngine:
 
     def compile_do(self):
         # Compiles a do statement
+        call_name = None
         call = ""
         while safe_true(self.count):
             self.set_token()
@@ -295,16 +301,28 @@ class CompilationEngine:
             if self.token.is_statement_end():
                 break
             elif self.token.is_parens_start():
+                if call_name is not None:
+                    self.vw.write_push(
+                        self.sym_table.kind_of(call_name),
+                        self.sym_table.index_of(call_name),
+                    )
+                if "." not in call:
+                    call = f"{self.class_name}.{call}"
+                    call_name = "this"
+                    self.vw.write_push("POINTER", 0)
                 self.compile_expression_list()
             else:
                 if len(call) == 0:
-                    call = (
+                    is_var = self.sym_table.type_of(self.token_body()) != "NONE"
+                    call_name = self.token_body() if is_var else None
+                    call += (
                         self.token_body()
-                        if self.sym_table.type_of(self.token_body()) == "NONE"
+                        if not is_var
                         else self.sym_table.type_of(self.token_body())
                     )
                 else:
                     call += self.token_body()
+        self.call_arg_count += 0 if call_name is None else 1
         self.vw.write_call(call, self.call_arg_count)
         self.call_arg_count = None
         self.vw.write_pop("TEMP", 0)
@@ -456,7 +474,7 @@ class CompilationEngine:
             elif self.token_body() == "false":
                 self.vw.write_push("CONST", 0)
             elif self.token_body() == "this":
-                self.vw.write_push("ARG", 0)
+                self.vw.write_push("POINTER", 0)
             else:
                 raise Exception(
                     f"Unrecognized keyword encountered while pushing term: {self.token_body()}"
