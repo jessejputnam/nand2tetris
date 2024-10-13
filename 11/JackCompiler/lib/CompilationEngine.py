@@ -1,7 +1,7 @@
-from VMWriter import VMWriter
-from SymbolTable import SymbolTable
+from lib.VMWriter import VMWriter
+from lib.SymbolTable import SymbolTable
 from lib.Token import Token
-from lib.Lib import safe_true, get_op
+from lib.Funcs import safe_true, get_op
 
 from lib.Errs import (
     bad_var_dec,

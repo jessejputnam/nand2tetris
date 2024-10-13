@@ -1,5 +1,6 @@
-from lib.Token import Token
-from lib.Lib import safe_true
+from Token import Token
+from Funcs import safe_true
+
 
 class CompilationEngine:
     def __init__(self, input_path: str, output_path: str):
@@ -14,8 +15,10 @@ class CompilationEngine:
             with open(output_path, "w+") as self.file_out:
                 self.set_token()
                 if self.get_token() != "<tokens>":
-                    raise Exception(f"encountered unexpected token while starting file compilation: {self.get_token()}")
-                
+                    raise Exception(
+                        f"encountered unexpected token while starting file compilation: {self.get_token()}"
+                    )
+
                 while safe_true(self.count):
                     self.set_token()
                     if self.get_token() is None:
@@ -26,7 +29,9 @@ class CompilationEngine:
                     elif self.get_token() == "</tokens>":
                         break
                     else:
-                        raise Exception(f"Encountered incorrect token while compiling file: {self.get_token()}")
+                        raise Exception(
+                            f"Encountered incorrect token while compiling file: {self.get_token()}"
+                        )
 
     def compile_class(self):
         # Compiles a complete class
@@ -45,12 +50,17 @@ class CompilationEngine:
                 self.write()
             elif self.token.is_block_start():
                 self.write()
-            elif self.token_type() == "keyword" and self.token_body() in ["static", "field"]:
+            elif self.token_type() == "keyword" and self.token_body() in [
+                "static",
+                "field",
+            ]:
                 self.compile_class_var_dec()
             elif self.token.is_subroutine():
                 self.compile_subroutine_dec()
             else:
-                raise Exception(f"Encountered unexpected token while compiling class at line {self.count} \n{self.get_token()}")
+                raise Exception(
+                    f"Encountered unexpected token while compiling class at line {self.count} \n{self.get_token()}"
+                )
         self.write()
         self.write("</class>")
 
@@ -61,7 +71,9 @@ class CompilationEngine:
         while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
-                raise Exception("Encountered incorrect token while compiling variable declaration")
+                raise Exception(
+                    "Encountered incorrect token while compiling variable declaration"
+                )
             if self.token.is_statement_end():
                 break
             self.write()
@@ -75,7 +87,9 @@ class CompilationEngine:
         while safe_true(self.count):
             self.set_token()
             if self.get_token() is None:
-                raise Exception("encountered NULL while compiling subroutine declaration")
+                raise Exception(
+                    "encountered NULL while compiling subroutine declaration"
+                )
             if self.token.is_block_end():
                 break
 
@@ -160,7 +174,9 @@ class CompilationEngine:
                 self.write("</statements>")
                 break
             else:
-                raise Exception(f"encountered unexpected token while compiling statements at line {self.count}\n{self.get_token()}")
+                raise Exception(
+                    f"encountered unexpected token while compiling statements at line {self.count}\n{self.get_token()}"
+                )
             self.set_token()
         self.set_token()
 
@@ -182,18 +198,17 @@ class CompilationEngine:
         self.write()
         self.write("</letStatement>")
 
-
     def compile_if(self):
         # Compiles an if statement, possibly with a trailing else clause
         self.write("<ifStatement>")
         self.write()
-        
+
         while safe_true(self.count):
             self.set_token()
 
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling if statement")
-            
+
             elif self.token.is_parens_start():
                 self.write()
                 self.compile_expression()
@@ -207,9 +222,8 @@ class CompilationEngine:
                 self.write()
             else:
                 break
-        
+
         self.write("</ifStatement>")
-        
 
     def compile_while(self):
         # Compiles a while statement
@@ -220,7 +234,7 @@ class CompilationEngine:
             self.set_token()
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling while statement")
-            elif self.token.is_parens_start():    
+            elif self.token.is_parens_start():
                 self.write()
                 self.compile_expression()
                 self.write()
@@ -262,7 +276,7 @@ class CompilationEngine:
             self.write()
             self.write("</returnStatement>")
             return
-        
+
         while safe_true(self.count):
             if self.get_token() is None:
                 raise Exception("encountered NULL while compiling return statement")
@@ -324,7 +338,7 @@ class CompilationEngine:
                 self.write()
                 self.set_token()
                 self.compile_expression_list()
-        else: 
+        else:
             self.write()
         self.write("</term>")
 
@@ -353,10 +367,10 @@ class CompilationEngine:
         self.write("</expressionList>")
         self.write()
 
-    def write(self, token = None):
+    def write(self, token=None):
         if token is None:
             self.file_out.write(f"{"  "*self.prefix}{self.get_token()}\n")
-        else: 
+        else:
             if token[1] == "/":
                 self.untab()
                 self.file_out.write(f"{"  "*self.prefix}{token}\n")
@@ -364,7 +378,7 @@ class CompilationEngine:
                 self.file_out.write(f"{"  "*self.prefix}{token}\n")
                 self.tab()
 
-    def set_token(self, x: int=1):
+    def set_token(self, x: int = 1):
         self.count += x
         if x == 1:
             self.prev_token = Token(self.get_token())
@@ -388,11 +402,12 @@ class CompilationEngine:
         self.file_in.seek(pointer)
         self.token.set(token)
         return new_token
-    
 
     def get_token(self) -> str:
         return self.token.token
+
     def token_type(self) -> str:
         return self.token.token_type
+
     def token_body(self) -> str:
         return self.token.token_body

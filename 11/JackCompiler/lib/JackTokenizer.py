@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from lib.Lib import (
+from lib.Funcs import (
     get_token_file_name,
     is_symbol,
     is_int,

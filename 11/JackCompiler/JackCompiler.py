@@ -1,10 +1,10 @@
 import sys
 from pathlib import Path
 
-from JackTokenizer import JackTokenizer
-from CompilationEngine import CompilationEngine
+from lib.JackTokenizer import JackTokenizer
+from lib.CompilationEngine import CompilationEngine
 
-from lib.Lib import (
+from lib.Funcs import (
     check_args,
     get_files_list,
     get_token_file_name,

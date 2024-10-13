@@ -1,5 +1,5 @@
 from typing import Literal
-from lib.Lib import get_seg
+from lib.Funcs import get_seg
 
 seg_type = Literal["CONST", "ARG", "LOCAL", "STATIC", "THIS", "THAT", "POINTER", "TEMP"]
 comm_type = Literal["ADD", "SUB", "NEG", "EQ", "GT", "LT", "AND", "OR", "NOT"]
