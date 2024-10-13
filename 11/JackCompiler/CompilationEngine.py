@@ -53,7 +53,6 @@ class CompilationEngine:
         except Exception as err:
             raise
         finally:
-            # self.sym_table.print_table("class")
             self.vw.close()
 
     def compile_class(self):
@@ -222,23 +221,30 @@ class CompilationEngine:
         self.set_token()
 
     def compile_let(self):
-        # Compiles a let statement
+        """Compiles a let statement"""
         self.set_token()
         var_kind = self.sym_table.kind_of(self.token_body())
         var_idx = self.sym_table.index_of(self.token_body())
 
         next_token = Token(self.look_ahead())
         if next_token.is_arr_start():
+            self.vw.write_push(var_kind, var_idx)
             self.set_token()
-            # self.write()
             self.compile_expression()
-            # self.write()
-        self.set_token()
-        self.compile_expression()
-        self.vw.write_pop(var_kind, var_idx)
+            self.vw.write_arithmetic("ADD")
+            self.set_token()
+            self.compile_expression()
+            self.vw.write_pop("TEMP", 0)
+            self.vw.write_pop("POINTER", 1)
+            self.vw.write_push("TEMP", 0)
+            self.vw.write_pop("THAT", 0)
+        else:
+            self.set_token()
+            self.compile_expression()
+            self.vw.write_pop(var_kind, var_idx)
 
     def compile_if(self):
-        # Compiles an if statement, possibly with a trailing else clause
+        """Compiles an if statement, possibly with a trailing else clause"""
         open_if = True
         self.if_count += 1
         if_label = f"IF_{self.if_count}"
@@ -267,7 +273,7 @@ class CompilationEngine:
         self.vw.write_label(f"{if_label}_END")
 
     def compile_while(self):
-        # Compiles a while statement
+        """Compiles a while statement"""
         self.loop_count += 1
         loop_label = f"LOOP_{self.loop_count}"
         self.vw.write_label(loop_label)
@@ -290,7 +296,7 @@ class CompilationEngine:
         self.vw.write_label(f"{loop_label}_END")
 
     def compile_do(self):
-        # Compiles a do statement
+        """Compiles a do statement"""
         call_name = None
         call = ""
         while safe_true(self.count):
@@ -328,8 +334,8 @@ class CompilationEngine:
         self.vw.write_pop("TEMP", 0)
 
     def compile_return(self):
+        """Compiles a return statement"""
         try:
-            # Compiles a return statement
             next_token = self.look_ahead()
             if next_token == "<symbol> ; </symbol>":
                 if self.sub_return_type != "void":
@@ -361,7 +367,7 @@ class CompilationEngine:
             raise
 
     def compile_expression(self):
-        # Compiles an expression
+        """Compiles an expression"""
         try:
             op = None
             self.set_token()
@@ -386,8 +392,8 @@ class CompilationEngine:
             raise
 
     def compile_term(self):
+        """Compiles a term."""
         try:
-            # Compiles a term.
             if self.token.is_unary_op():
                 op = self.token_body()
                 self.set_token()
@@ -400,14 +406,17 @@ class CompilationEngine:
             elif self.token_type() == "identifier":
                 next_token = Token(self.look_ahead())
                 if next_token.is_arr_start():
+                    var_kind = self.sym_table.kind_of(self.token_body())
+                    var_idx = self.sym_table.index_of(self.token_body())
+                    self.vw.write_push(var_kind, var_idx)
                     self.set_token()
-                    # self.write()
                     self.compile_expression()
-                    # self.write()
+                    self.vw.write_arithmetic("ADD")
+                    self.vw.write_pop("POINTER", 1)
+                    self.vw.write_push("THAT", 0)
                 elif next_token.is_parens_start():
                     self.set_token()
                     self.compile_expression_list()
-                    # self.write()
                 elif next_token.token_type == "symbol" and next_token.token_body == ".":
                     call = self.token_body()
                     self.set_token()
@@ -429,7 +438,7 @@ class CompilationEngine:
             raise
 
     def compile_expression_list(self):
-        # Compiles a possibly empty comma-separated list of expressions
+        """Compiles a possibly empty comma-separated list of expressions"""
         self.call_arg_count = 0
         next_token = Token(self.look_ahead())
         if next_token.is_parens_end():
@@ -446,6 +455,7 @@ class CompilationEngine:
             self.compile_expression()
 
     def set_token(self, x: int = 1):
+        """Sets current token to the next token"""
         self.count += x
         if x == 1:
             self.prev_token = Token(self.get_token())
@@ -453,9 +463,11 @@ class CompilationEngine:
         self.token.set(token)
 
     def pointer(self) -> int:
+        """Returns the current place of pointer of input document"""
         return self.file_in.tell()
 
     def look_ahead(self) -> str:
+        """Returns the next token without changing current token"""
         pointer = self.pointer()
         token = self.get_token()
         self.set_token(0)
@@ -465,15 +477,19 @@ class CompilationEngine:
         return new_token
 
     def get_token(self) -> str:
+        """Returns the current token"""
         return self.token.token
 
     def token_type(self) -> str:
+        """Returns current token type"""
         return self.token.token_type
 
     def token_body(self) -> str:
+        """Returns current token body"""
         return self.token.token_body
 
     def push_term(self) -> None:
+        """Writes VM Code for pushing a term"""
         if self.token_type() == "integerConstant":
             self.vw.write_push("CONST", int(self.token_body()))
         elif self.token_type() == "keyword":
@@ -489,7 +505,8 @@ class CompilationEngine:
                     f"Unrecognized keyword encountered while pushing term: {self.token_body()}"
                 )
         elif self.token_type() == "stringConstant":
-            self.vw.write_call("String.new", len(self.token_body()))
+            self.vw.write_push("CONST", len(self.token_body()))
+            self.vw.write_call("String.new", 1)
             for c in self.token_body():
                 self.vw.write_push("CONST", ord(c))
                 self.vw.write_call("String.appendChar", 2)
