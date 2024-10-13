@@ -308,10 +308,9 @@ class CompilationEngine:
                 break
             elif self.token.is_parens_start():
                 if call_name is not None:
-                    self.vw.write_push(
-                        self.sym_table.kind_of(call_name),
-                        self.sym_table.index_of(call_name),
-                    )
+                    var_kind = self.sym_table.kind_of(call_name)
+                    var_idx = self.sym_table.index_of(call_name)
+                    self.vw.write_push(var_kind, var_idx)
                 if "." not in call:
                     call = f"{self.class_name}.{call}"
                     call_name = "this"
@@ -319,13 +318,10 @@ class CompilationEngine:
                 self.compile_expression_list()
             else:
                 if len(call) == 0:
-                    is_var = self.sym_table.type_of(self.token_body()) != "NONE"
+                    var_type = self.sym_table.type_of(self.token_body())
+                    is_var = var_type != "NONE"
                     call_name = self.token_body() if is_var else None
-                    call += (
-                        self.token_body()
-                        if not is_var
-                        else self.sym_table.type_of(self.token_body())
-                    )
+                    call += self.token_body() if not is_var else var_type
                 else:
                     call += self.token_body()
         self.call_arg_count += 0 if call_name is None else 1
@@ -415,16 +411,33 @@ class CompilationEngine:
                     self.vw.write_pop("POINTER", 1)
                     self.vw.write_push("THAT", 0)
                 elif next_token.is_parens_start():
+                    call = f"{self.class_name}.{self.token_body()}"
+                    call_name = "this"
+                    self.vw.write_push("POINTER", 0)
                     self.set_token()
                     self.compile_expression_list()
-                elif next_token.token_type == "symbol" and next_token.token_body == ".":
-                    call = self.token_body()
+                    self.call_arg_count += 1  # Include THIS as arg
+                    self.vw.write_call(call, self.call_arg_count)
+                    self.call_arg_count = None
+                elif next_token.is_period():
+                    var_type = self.sym_table.type_of(self.token_body())
+                    is_var = var_type != "NONE"
+                    call_name = self.token_body() if is_var else None
+                    call = self.token_body() if not is_var else var_type
                     self.set_token()
-                    call = call + self.token_body()
+                    call += self.token_body()  # adds period
                     self.set_token()
-                    call = call + self.token_body()
+                    call += self.token_body()  # adds class' method name
                     self.set_token()
+
+                    if call_name is not None:
+                        # Defined class method pushes instance for THIS arg
+                        var_kind = self.sym_table.kind_of(call_name)
+                        var_idx = self.sym_table.index_of(call_name)
+                        self.vw.write_push(var_kind, var_idx)
                     self.compile_expression_list()
+
+                    self.call_arg_count += 0 if call_name is None else 1
                     self.vw.write_call(call, self.call_arg_count)
                     self.call_arg_count = None
                 else:
@@ -497,6 +510,8 @@ class CompilationEngine:
                 self.vw.write_push("CONST", 0)
                 self.vw.write_arithmetic("NOT")
             elif self.token_body() == "false":
+                self.vw.write_push("CONST", 0)
+            elif self.token_body() == "null":
                 self.vw.write_push("CONST", 0)
             elif self.token_body() == "this":
                 self.vw.write_push("POINTER", 0)

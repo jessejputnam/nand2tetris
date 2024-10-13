@@ -10,7 +10,7 @@ class VMWriter:
         # Creates new output .vm file and prepares it for writing
         self.output = open(f"{output}", "w")
         program_name = str(output).split("/")[-2]
-        self.output.write(f"// VM Code for program: {program_name}\n\n")
+        self.output.write(f"// VM Code for program: {program_name}\n")
 
     def write_push(self, segment: seg_type, index: int):
         # Writes a VM push command
@@ -42,7 +42,7 @@ class VMWriter:
 
     def write_function(self, name: str, n_locals: int):
         # Writes a VM function command
-        self.output.write(f"function {name} {n_locals}\n")
+        self.output.write(f"\nfunction {name} {n_locals}\n")
 
     def write_return(self):
         # Writes a VM return command

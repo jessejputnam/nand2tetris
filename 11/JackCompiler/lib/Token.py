@@ -54,6 +54,9 @@ class Token:
     def is_parens_start(self) -> bool:
         return self.token_type == "symbol" and self.token_body == "("
 
+    def is_period(self) -> bool:
+        return self.token_type == "symbol" and self.token_body == "."
+
     def is_arr_start(self) -> bool:
         return self.token_type == "symbol" and self.token_body == "["
 

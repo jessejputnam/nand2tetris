@@ -77,7 +77,7 @@ class JackTokenizer:
                 return
 
             # symbol encountered
-            elif is_symbol(c):
+            elif is_symbol(c) and not is_string_lit:
                 # symbol encountered while building token
                 if token != "":
                     self.cur_token = token
