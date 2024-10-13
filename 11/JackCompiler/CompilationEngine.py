@@ -51,7 +51,7 @@ class CompilationEngine:
                     else:
                         raise Exception(bad_token(self.get_token))
         except Exception as err:
-            print(err)
+            raise
         finally:
             # self.sym_table.print_table("class")
             self.vw.close()
@@ -328,96 +328,105 @@ class CompilationEngine:
         self.vw.write_pop("TEMP", 0)
 
     def compile_return(self):
-        # Compiles a return statement
-        next_token = self.look_ahead()
-        if next_token == "<symbol> ; </symbol>":
-            if self.sub_return_type != "void":
-                raise Exception("Expected return values but encountered VOID.")
-            self.set_token()
-            self.vw.write_push("CONST", 0)
-            self.vw.write_return()
-            return
+        try:
+            # Compiles a return statement
+            next_token = self.look_ahead()
+            if next_token == "<symbol> ; </symbol>":
+                if self.sub_return_type != "void":
+                    raise Exception("Expected return values but encountered VOID.")
+                self.set_token()
+                self.vw.write_push("CONST", 0)
+                self.vw.write_return()
+                return
 
-        if self.sub_name == "new":
-            self.set_token()
-            if self.token_body() != "this":
-                raise Exception("Constructors must return THIS")
-            self.set_token()
-            self.vw.write_push("POINTER", 0)
-            self.vw.write_return()
-            return
+            if self.sub_name == "new":
+                self.set_token()
+                if self.token_body() != "this":
+                    raise Exception("Constructors must return THIS")
+                self.set_token()
+                self.vw.write_push("POINTER", 0)
+                self.vw.write_return()
+                return
 
-        while safe_true(self.count):
-            if self.sub_return_type == "void":
-                raise Exception("Expected VOID return but encountered value(s).")
-            if self.get_token() is None:
-                raise Exception("encountered NULL while compiling return statement")
-            if self.token.is_statement_end():
-                break
-            self.compile_expression()
-            self.vw.write_return()
+            while safe_true(self.count):
+                if self.sub_return_type == "void":
+                    raise Exception("Expected VOID return but encountered value(s).")
+                if self.get_token() is None:
+                    raise Exception("encountered NULL while compiling return statement")
+                if self.token.is_statement_end():
+                    break
+                self.compile_expression()
+                self.vw.write_return()
+        except Exception as e:
+            raise
 
     def compile_expression(self):
         # Compiles an expression
-        op = None
-        self.set_token()
-        self.compile_term()
-        while safe_true(self.count):
-            self.set_token()
-            if self.token.is_expr_end():
-                if op is None:
-                    return
-                if op == "*":
-                    self.vw.write_call("Math.multiply", 2)
-                elif op == "/":
-                    self.vw.write_call("Math.divide", 2)
-                else:
-                    self.vw.write_arithmetic(get_op(op))
-                return
-            op = self.token_body()
-
+        try:
+            op = None
             self.set_token()
             self.compile_term()
+            while safe_true(self.count):
+                self.set_token()
+                if self.token.is_expr_end():
+                    if op is None:
+                        return
+                    if op == "*":
+                        self.vw.write_call("Math.multiply", 2)
+                    elif op == "/":
+                        self.vw.write_call("Math.divide", 2)
+                    else:
+                        self.vw.write_arithmetic(get_op(op))
+                    return
+                op = self.token_body()
+
+                self.set_token()
+                self.compile_term()
+        except Exception as e:
+            raise
 
     def compile_term(self):
-        # Compiles a term.
-        if self.token.is_unary_op():
-            op = self.token_body()
-            self.set_token()
-            self.compile_term()
-            self.vw.write_arithmetic("NOT" if op == "~" else "NEG")
-
-        elif self.token.is_parens_start():
-            self.compile_expression()
-
-        elif self.token_type() == "identifier":
-            next_token = Token(self.look_ahead())
-            if next_token.is_arr_start():
+        try:
+            # Compiles a term.
+            if self.token.is_unary_op():
+                op = self.token_body()
                 self.set_token()
-                # self.write()
+                self.compile_term()
+                self.vw.write_arithmetic("NOT" if op == "~" else "NEG")
+
+            elif self.token.is_parens_start():
                 self.compile_expression()
-                # self.write()
-            elif next_token.is_parens_start():
-                self.set_token()
-                self.compile_expression_list()
-                # self.write()
-            elif next_token.token_type == "symbol" and next_token.token_body == ".":
-                call = self.token_body()
-                self.set_token()
-                call = call + self.token_body()
-                self.set_token()
-                call = call + self.token_body()
-                self.set_token()
-                self.compile_expression_list()
-                self.vw.write_call(call, self.call_arg_count)
-                self.call_arg_count = None
-            else:
-                var_kind = self.sym_table.kind_of(self.token_body())
-                var_idx = self.sym_table.index_of(self.token_body())
-                self.vw.write_push(var_kind, var_idx)
 
-        else:
-            self.push_term()
+            elif self.token_type() == "identifier":
+                next_token = Token(self.look_ahead())
+                if next_token.is_arr_start():
+                    self.set_token()
+                    # self.write()
+                    self.compile_expression()
+                    # self.write()
+                elif next_token.is_parens_start():
+                    self.set_token()
+                    self.compile_expression_list()
+                    # self.write()
+                elif next_token.token_type == "symbol" and next_token.token_body == ".":
+                    call = self.token_body()
+                    self.set_token()
+                    call = call + self.token_body()
+                    self.set_token()
+                    call = call + self.token_body()
+                    self.set_token()
+                    self.compile_expression_list()
+                    self.vw.write_call(call, self.call_arg_count)
+                    self.call_arg_count = None
+                else:
+                    var_kind = self.sym_table.kind_of(self.token_body())
+                    var_idx = self.sym_table.index_of(self.token_body())
+                    self.vw.write_push(var_kind, var_idx)
+
+            else:
+                self.push_term()
+        except Exception as e:
+            raise
 
     def compile_expression_list(self):
         # Compiles a possibly empty comma-separated list of expressions
@@ -479,6 +488,11 @@ class CompilationEngine:
                 raise Exception(
                     f"Unrecognized keyword encountered while pushing term: {self.token_body()}"
                 )
+        elif self.token_type() == "stringConstant":
+            self.vw.write_call("String.new", len(self.token_body()))
+            for c in self.token_body():
+                self.vw.write_push("CONST", ord(c))
+                self.vw.write_call("String.appendChar", 2)
         else:
             raise Exception(
                 f"Unrecognized token_type while pushing term: {self.token_type()}"

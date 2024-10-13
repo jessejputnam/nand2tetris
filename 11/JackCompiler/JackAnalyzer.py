@@ -8,7 +8,6 @@ from lib.Lib import (
     check_args,
     get_files_list,
     get_token_file_name,
-    # get_parsed_file_name,
     get_vm_file_name,
 )
 
@@ -28,7 +27,6 @@ if __name__ == "__main__":
 
             token_file = file.with_name(get_token_file_name(file.name))
             vm_file = file.with_name(get_vm_file_name(file.name))
-            # parsed_file = file.with_name(get_parsed_file_name(file.name))
 
             comp_engine = CompilationEngine(token_file, vm_file)
         print("Files successfully compiled")
@@ -42,4 +40,3 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-        # traceback.print_exc()
