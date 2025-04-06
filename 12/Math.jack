@@ -1,0 +1,162 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Math.jack
+
+/** A library of commonly used mathematical functions.
+ *  All functions runs in O(n), where n is the number of bits used
+ *  for representing a two's complement integer value (16 in the Hack computer). 
+ *  Note: Jack compilers implement multiplication and division
+ *  using calls to OS functions in this class.
+ */
+class Math {
+    static int n;             // Number of bits used for representing a two's complement integer
+    static Array powersOfTwo; // Stores 2^0, 2^1, 2^2,..., 2^(n-1)
+
+    // Initializes the Math library.
+    function void init() {
+        var int xPow, iPow;
+        let n = 16;
+        let powersOfTwo = Array.new(16);
+        let iPow = 0;
+        let xPow = 1;
+        while (iPow < n) {
+            let powersOfTwo[iPow] = xPow;
+            let iPow = iPow + 1;
+            let xPow = xPow + xPow;
+        }
+        return;
+    }
+
+    function boolean bit(int y, int i) {
+        return (y & powersOfTwo[i]) > 0;
+    }
+
+    /** Returns the product of x and y. 
+     *  When a Jack compiler detects the multiplication operator '*'
+     *  in an expression, it handles it by invoking this method. 
+     *  Thus, in Jack, x * y and Math.multiply(x,y) return the same value.
+     */
+    function int multiply(int x, int y) {
+        var int sum, shiftedX, i;
+        var boolean isNeg;
+
+        let isNeg = Math.getsNegativeSign(x, y);
+        let x = Math.abs(x);
+        let y = Math.abs(y);
+
+        let i = 0;
+        let sum = 0;
+        let shiftedX = x;
+
+        while (i < 16) {
+            if (Math.bit(y, i)) {
+                let sum = shiftedX + sum;
+            }
+            let shiftedX = shiftedX + shiftedX;
+            let i = i + 1;
+        }
+        
+        if (isNeg) {
+            return 0 - sum;
+        }
+        return sum;
+    }
+
+    /** Returns the integer part of x / y.
+     *  When a Jack compiler detects the division operator '/'
+     *  an an expression, it handles it by invoking this method.
+     *  Thus, x/y and Math.divide(x,y) return the same value.
+     */
+    function int divide(int x, int y) {
+        var boolean isNeg;
+        var int q;
+        var int xAbs, yAbs;
+
+
+        let isNeg = Math.getsNegativeSign(x, y);
+        let xAbs = Math.abs(x);
+        let yAbs = Math.abs(y);
+
+        if (yAbs > xAbs) {
+            return 0;
+        }
+
+        let q = Math.divide(xAbs, yAbs + yAbs);
+
+        if ((xAbs - ((q + q) * yAbs)) < yAbs) {
+            if (isNeg) {
+                return 0 - (q + q);
+            }
+            return (q + q);
+        }
+
+        if (isNeg) {
+            return 0 - (q + q) + 1;
+        }
+        return (q + q + 1);
+    }
+
+    /** Returns the integer part of the square root of x.
+    */
+    function int sqrt(int x) {
+        var int pow, y, j;
+
+        let y = 0;
+        let j = (n / 2) - 1;
+
+        while (j > -1) {
+            let pow = (y + powersOfTwo[j]);
+            let pow = pow * pow;
+
+            if (((pow < x) | (pow = x)) & (pow > 0)) {
+                let y = y + powersOfTwo[j];
+            }
+            let j = j - 1;
+        }
+        return y;
+    }
+
+    /** Returns the greater value.
+    */
+    function int max(int a, int b) {
+        if (b > a) {
+            return b;
+        }
+        return a;
+    }
+
+    /** Returns the smaller value.
+    */
+    function int min(int a, int b) {
+        if (a < b) {
+            return a;
+        }
+        return b;
+    }
+
+    /** Returns the absolute value of x
+    */
+    function int abs(int x) {
+        if (x < 0) {
+            return -x;
+        }
+        return x;
+    }
+
+    function boolean getsNegativeSign(int x, int y) {
+        if (x < 0) {
+            if (~(y < 0)) {
+                return true;
+            }
+        }
+
+        if (y < 0) {
+            if (~(x < 0)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
