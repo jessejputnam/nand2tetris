@@ -28,6 +28,10 @@ class Math {
         return;
     }
 
+    function int getPowersOfTwo(int x) {
+        return powersOfTwo[x];
+    }
+
     function boolean bit(int y, int i) {
         return (y & powersOfTwo[i]) > 0;
     }
