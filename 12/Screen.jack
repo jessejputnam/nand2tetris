@@ -1,0 +1,235 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Screen.jack
+
+/**
+ * A library of functions for displaying graphics on the screen.
+ * The Hack physical screen consists of 512 rows (indexed 0..511, top to bottom)
+ * of 256 pixels each (indexed 0..255, left to right). The top left pixel on 
+ * the screen is indexed (0,0).
+ */
+class Screen {
+    static int currentColor;
+
+    /** Initializes the Screen. */
+    function void init() {
+        let currentColor = 1;
+        return;
+    }
+
+    /** Erases the entire screen. */
+    function void clearScreen() {
+        var int i;
+        // do Screen.setColor(false);
+        let i = 16384;
+        // while (i < 256) {
+        //     do Screen.drawLine(0, i, 511, i);
+        //     let i = i + 1;
+        // }
+
+        while (i < 24576) {
+            do Memory.poke(i, 0);
+            let i = i + 1;
+        }
+        
+        return;
+    }
+
+    /** Sets the current color, to be used for all subsequent drawXXX commands.
+     *  Black is represented by true, white by false. */
+    function void setColor(boolean b) {
+        if (b) {
+            let currentColor = 1;
+        } else {
+            let currentColor = 0;
+        }
+        return;
+    }
+
+    /** Draws the (x,y) pixel, using the current color. */
+    function void drawPixel(int x, int y) {
+        var int addr;
+        var int word;
+        var int mask;
+
+        let mask = Math.getPowersOfTwo(x & 15);
+        let addr = 16384 + ((32 * y) + (x/16));
+
+        let word = Memory.peek(addr);
+
+        if (currentColor) {
+            do Memory.poke(addr, word | mask);
+        } else {
+            do Memory.poke(addr, word & ~mask);
+        }
+
+        return;
+    }
+
+    /** Draws a line from pixel (x1,y1) to pixel (x2,y2), using the current color. */
+    function void drawLine(int x1, int y1, int x2, int y2) {
+        var int a, b, diff, dx, dy;
+
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+        let a = 0;
+        let b = 0;
+        let diff = 0;
+
+        while (Screen.drawLineCheck(a, b, dx, dy)) {
+            // Fill pixel
+            do Screen.drawPixel(x1 + a, y1 + b);
+
+            // Move Marker
+            let a = a + Screen.getOffsetA(dx, dy, diff);
+            let b = b + Screen.getOffsetB(dx, dy, diff);
+            let diff = Screen.getDiff(dx, dy, diff);
+        }
+
+        return;
+    }
+
+    /** Draws a filled rectangle whose top left corner is (x1, y1)
+     * and bottom right corner is (x2,y2), using the current color. */
+    function void drawRectangle(int x1, int y1, int x2, int y2) {
+        while (y1 < y2) {
+            do Screen.drawLine(x1, y1, x2, y1);
+            let y1 = y1 + 1;
+        }
+        return;
+    }
+
+    /** Draws a filled circle of radius r<=181 around (x,y), using the current color. */
+    function void drawCircle(int x, int y, int r) {
+        var int dy;
+        var int x1, x2, y1, y2;
+        if (r > 181) {
+            let r = 181;
+        }
+        let dy = r;
+
+        while (dy > 0) {
+            // bottom half
+            let x1 = x - Math.sqrt((r * r) - (dy * dy));
+            let y1 = y + dy;
+            let x2 = x + Math.sqrt((r * r) - (dy * dy));
+            let y2 = y + dy;
+            do Screen.drawLine(x1, y1, x2, y2);
+
+            // top half
+            let x1 = x - Math.sqrt((r * r) - (dy * dy));
+            let y1 = y - dy;
+            let x2 = x + Math.sqrt((r * r) - (dy * dy));
+            let y2 = y - dy;
+            do Screen.drawLine(x1, y1, x2, y2);
+
+            let dy = dy - 1;
+        }
+
+        // middle
+        let x1 = x - Math.sqrt((r * r) - (dy * dy));
+        let y1 = y + dy;
+        let x2 = x + Math.sqrt((r * r) - (dy * dy));
+        let y2 = y + dy;
+        do Screen.drawLine(x1, y1, x2, y2);
+
+        return;
+    }
+
+    function boolean drawLineCheck(int a, int b, int dx, int dy) {
+        if (a = dx) {
+            if (b = dy) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function int getOffsetA(int dx, int dy, int diff) {
+        // north-south
+        if (dx = 0) {  return 0; } 
+
+        // east-west
+        if (dy = 0) {
+            if (dx > 0) { return 1; }
+            if (dx < 0) { return -1; }
+        } 
+        
+        // diagonal
+        // north
+        if (dy < 0) {       
+            if (dx > 0) {       // east
+                if (diff < 0) { return 1; } 
+                return 0; 
+            } else {            // west
+                if (diff < 0) { return -1; } 
+                return 0;
+            }
+        } else {            // south
+            if (dx > 0) {       // east
+                if (diff < 0) { return 1; } 
+                return 0;
+            } else {            // west
+                if (diff < 0) { return -1; } 
+                return 0;
+            }
+        }
+    }
+
+    function int getOffsetB(int dx,int dy, int diff) {
+        // north-south
+        if (dx = 0) {   
+            if (dy < 0) { return -1; }
+            if (dy > 0) { return 1; }
+        } 
+        
+        // east-west
+        if (dy = 0) { return 0; } 
+
+        // diagonal
+        // north
+        if (dy < 0) {       
+            if (dx > 0) {       // east
+                if (diff < 0) { return 0; }
+                return -1;
+            } else {            // west
+                if (diff < 0) { return 0; } 
+                return -1;
+            }
+        } 
+        
+        // south
+        if (dx > 0) {       // east
+            if (diff < 0) { return 0; } 
+            return 1;
+        } else {            // west
+            if (diff < 0) { return 0; } 
+            return 1;
+        }
+    }
+
+    function int getDiff(int dx, int dy, int diff) {
+        if (dx = 0) { return diff; }
+        if (dy = 0) { return diff; }
+
+        // north
+        if (dy < 0) {       
+            if (dx > 0) {  // east
+                if (diff < 0) { return diff - dy;}  
+                return diff - dx;                   
+            }           
+            // west
+            if (diff < 0) { return diff - dy; }
+            return diff + dx;
+        }
+        // south
+        if (dx > 0) {  // east
+            if (diff < 0) { return diff + dy; }
+            return diff - dx;
+        }
+        // west
+        if (diff < 0) { return diff + dy; }
+        return diff + dx;
+    }
+}
