@@ -21,12 +21,7 @@ class Screen {
     /** Erases the entire screen. */
     function void clearScreen() {
         var int i;
-        // do Screen.setColor(false);
         let i = 16384;
-        // while (i < 256) {
-        //     do Screen.drawLine(0, i, 511, i);
-        //     let i = i + 1;
-        // }
 
         while (i < 24576) {
             do Memory.poke(i, 0);
